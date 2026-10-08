@@ -78,8 +78,8 @@ void TitleScene::Draw()
     }
 
     // ========================================
- // 奥の兵士
- // ========================================
+    // 奥の兵士
+    // ========================================
     if (soldierBackHandle >= 0)
     {
         float y = sinf(t * 0.012f) * 2.0f;
@@ -102,54 +102,95 @@ void TitleScene::Draw()
         float y = sinf(t * 0.018f) * 3.0f;
 
         DrawRotaGraphF(
-            955.0f,
-            455.0f + y,
-            0.23,
-            0.0,
-            soldierFrontHandle,
-            TRUE
+            955.0f, 455.0f + y,
+            0.30, 0.0,
+            soldierFrontHandle, TRUE
         );
     }
 
     // ========================================
-    // 兵士の赤い目を発光させる
-    // ========================================
-    int eyeAlpha = 120 + (int)(sinf(t * 2.0f) * 80.0f);
+   // 兵士の目：強い赤色発光
+   // ========================================
 
-    SetDrawBlendMode(DX_BLENDMODE_ADD, eyeAlpha);
+   // ゆっくり明滅
+    float glow = (sinf(t * 2.5f) + 1.0f) * 0.5f;
 
-    // 左目
-    DrawCircle(980, 390, 5, GetColor(255, 0, 0), TRUE);
+    // 発光の強さ
+    int glowAlpha = 100 + (int)(glow * 155.0f);
 
-    // 右目
-    DrawCircle(960, 420, 5, GetColor(255, 0, 0), TRUE);
+    // 目の位置
+    int eyeX[2] = { 980, 994 };
+    int eyeY[2] = { 352, 350 };
 
+    for (int i = 0; i < 2; i++)
+    {
+        // 外側のぼんやりした赤い光
+        SetDrawBlendMode(DX_BLENDMODE_ADD, glowAlpha / 5);
+        DrawCircle(eyeX[i], eyeY[i], 10, GetColor(255, 0, 0), TRUE);
+
+        // 中間の赤い光
+        SetDrawBlendMode(DX_BLENDMODE_ADD, glowAlpha / 3);
+        DrawCircle(eyeX[i], eyeY[i], 6, GetColor(255, 0, 0), TRUE);
+
+        // 内側の強い赤い光
+        SetDrawBlendMode(DX_BLENDMODE_ADD, glowAlpha);
+        DrawCircle(eyeX[i], eyeY[i], 2, GetColor(255, 30, 30), TRUE);
+
+        // 中心の白い光
+        SetDrawBlendMode(DX_BLENDMODE_ADD, glowAlpha);
+        DrawCircle(eyeX[i], eyeY[i], 1, GetColor(255, 220, 220), TRUE);
+    }
+
+    // 描画設定を戻す
     SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
-    // 煙：ゆっくり移動
+    // ========================================
+    // 煙：2層でゆっくり流す
+    // ========================================
     if (smokeHandle >= 0)
     {
-        int offset = (int)(sinf(t * 0.008f) * 35.0f);
+        // 奥の煙
+        float smokeX1 = sinf(t * 0.15f) * 35.0f;
 
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 85);
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 45);
+
         DrawExtendGraph(
-            -30 + offset, 200,
-            1310 + offset, 720,
+            (int)(-80 + smokeX1), 180,
+            (int)(1360 + smokeX1), 720,
             smokeHandle, TRUE
         );
+
+        // 手前の煙
+        float smokeX2 = cosf(t * 0.10f) * 55.0f;
+
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 75);
+
+        DrawExtendGraph(
+            (int)(-120 + smokeX2), 280,
+            (int)(1400 + smokeX2), 760,
+            smokeHandle, TRUE
+        );
+
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
     }
 
-    // 赤い照明：明滅
+    // ========================================
+    // 赤い警告灯：明滅
+    // ========================================
     if (lightHandle >= 0)
     {
-        int alpha = 80 + (int)(sinf(t * 0.055f) * 45.0f);
+        // ゆっくり明るさを変える
+        float lightPulse = (sinf(t * 1.5f) + 1.0f) * 0.5f;
 
-        SetDrawBlendMode(DX_BLENDMODE_ADD, alpha);
+        int lightAlpha = 35 + (int)(lightPulse * 90.0f);
+
+        SetDrawBlendMode(DX_BLENDMODE_ADD, lightAlpha);
+
         DrawExtendGraph(
             0, 0, 1280, 720,
             lightHandle, TRUE
         );
+
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
     }
 
@@ -185,28 +226,141 @@ void TitleScene::Draw()
     }
 
     // タイトル
-    if (titleFont >= 0)
+   // ========================================
+   // タイトル：グリッチ＋走査線
+   // ========================================
+    if (titleFont >= 0)                            
     {
-        // グリッチ：ときどき文字全体が横にズレる
+        // たまにグリッチを発生させる
+        bool glitch = (animationTimer % 180 < 5);
+
         int glitchX = 0;
-        if (animationTimer % 120 < 4)
+
+        if (glitch)
         {
-            glitchX = (animationTimer % 2 == 0) ? 7 : -7;
+            glitchX = (animationTimer % 2 == 0) ? 5 : -5;
         }
 
-        // 赤い残像
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 110);
-        DrawStringToHandle(
-            94 + glitchX + 3, 105,
-            "SLOW", GetColor(255, 30, 45), titleFont
-        );
-        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+        // ========================================
+        // 赤と青の色ズレ
+        // ========================================
+        if (glitch)
+        {
+            SetDrawBlendMode(DX_BLENDMODE_ALPHA, 150);
 
-        // 本体
+            // 赤い残像
+            DrawStringToHandle(
+                94 + glitchX + 5, 105,
+                "SLOW",
+                GetColor(255, 30, 50),
+                titleFont
+            );
+
+            // 青い残像
+            DrawStringToHandle(
+                94 + glitchX - 5, 105,
+                "SLOW",
+                GetColor(0, 180, 255),
+                titleFont
+            );
+
+            SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+        }
+
+        // ========================================
+        // 通常のタイトル文字
+        // ========================================
         DrawStringToHandle(
             94 + glitchX, 105,
-            "SLOW", GetColor(245, 245, 245), titleFont
+            "SLOW",
+            GetColor(245, 245, 245),
+            titleFont
         );
+
+        // ========================================
+        // 走査線：文字の上を光が通過
+        // ========================================
+
+        // 3秒周期で上から下へ
+        float scanProgress = fmodf(t, 3.0f) / 3.0f;
+
+        int scanY = 105 + (int)(scanProgress * 120.0f);
+
+        // タイトルの範囲だけに描画
+        SetDrawArea(94, 105, 450, 225);
+
+        // ぼんやりした光
+        SetDrawBlendMode(DX_BLENDMODE_ADD, 45);
+
+        DrawBox(
+            94, scanY - 6,
+            450, scanY + 6,
+            GetColor(0, 180, 255),
+            TRUE
+        );
+
+        // 中心の細い光
+        SetDrawBlendMode(DX_BLENDMODE_ADD, 120);
+
+        DrawLine(
+            94, scanY,
+            450, scanY,
+            GetColor(180, 230, 255),
+            2
+        );
+
+        // 描画設定を戻す
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+        SetDrawArea(0, 0, 1280, 720);
+
+        // ========================================
+// 横方向のグリッチノイズ
+// ========================================
+        if (animationTimer % 180 < 8)
+        {
+            // グリッチする文字の横帯
+            int glitchY = 120 + (animationTimer * 17) % 85;
+
+            // 横に大きくズラす
+            int glitchOffset = (animationTimer % 2 == 0) ? 18 : -18;
+
+            // 横帯の範囲だけ描画
+            SetDrawArea(94, glitchY, 450, glitchY + 12);
+
+            // 赤いズレ
+            DrawStringToHandle(
+                94 + glitchOffset + 4,
+                105,
+                "SLOW",
+                GetColor(255, 30, 50),
+                titleFont
+            );
+
+            // 白いズレ
+            DrawStringToHandle(
+                94 + glitchOffset,
+                105,
+                "SLOW",
+                GetColor(255, 255, 255),
+                titleFont
+            );
+
+            // 青いズレ
+            SetDrawBlendMode(DX_BLENDMODE_ALPHA, 130);
+
+            DrawStringToHandle(
+                94 + glitchOffset - 5,
+                105,
+                "SLOW",
+                GetColor(0, 200, 255),
+                titleFont
+            );
+
+            SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+            // 描画範囲を戻す
+            SetDrawArea(0, 0, 1280, 720);
+        }
     }
 
     if (subtitleFont >= 0)
@@ -228,9 +382,9 @@ void TitleScene::Draw()
 
     // 選択枠
     int frameY = (int)menuFrameY;
-    int glowAlpha = 90 + (int)(sinf(t * 0.075f) * 50.0f);
+    int menuGlowAlpha = 90 + (int)(sinf(t * 0.075f) * 50.0f);
 
-    SetDrawBlendMode(DX_BLENDMODE_ADD, glowAlpha);
+    SetDrawBlendMode(DX_BLENDMODE_ADD, menuGlowAlpha);
     DrawBox(
         85, frameY,
         480, frameY + 44,
