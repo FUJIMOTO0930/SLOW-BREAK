@@ -1,8 +1,8 @@
-#include "TitleScene.h"
+ï»¿#include "TitleScene.h"
 #include <math.h>
 
 // ========================================
-// ‰Šú‰»
+// åˆæœŸåŒ–
 // ========================================
 void TitleScene::Initialize()
 {
@@ -21,6 +21,8 @@ void TitleScene::Initialize()
     oldDown = false;
     oldEnter = false;
     startRequested = false;
+    howToPlayRequested = false;
+    optionRequested = false;
 
     titleFont = CreateFontToHandle("Arial", 110, 9);
     subtitleFont = CreateFontToHandle("Arial", 22, 3);
@@ -28,7 +30,7 @@ void TitleScene::Initialize()
 }
 
 // ========================================
-// XV
+// æ›´æ–°
 // ========================================
 void TitleScene::Update()
 {
@@ -53,32 +55,44 @@ void TitleScene::Update()
     oldUp = up;
     oldDown = down;
 
-    if (enter && !oldEnter && selectedMenu == 0)
+    if (enter && !oldEnter)
     {
-        startRequested = true;
+        if (selectedMenu == 0)
+        {
+            startRequested = true;
+        }
+        else if (selectedMenu == 1)
+        {
+            howToPlayRequested = true;
+        }
+        else if (selectedMenu == 2)
+        {
+            optionRequested = true;
+        }
     }
+
     oldEnter = enter;
 
-    // Ô˜g‚ğŠŠ‚ç‚©‚ÉˆÚ“®
+    // èµ¤æ ã‚’æ»‘ã‚‰ã‹ã«ç§»å‹•
     float targetY = 350.0f + selectedMenu * 52.0f;
     menuFrameY += (targetY - menuFrameY) * 0.18f;
 }
 
 // ========================================
-// •`‰æ
+// æç”»
 // ========================================
 void TitleScene::Draw()
 {
     float t = GetNowCount() / 1000.0f;
 
-    // ”wŒi
+    // èƒŒæ™¯
     if (backgroundHandle >= 0)
     {
         DrawExtendGraph(0, 0, 1280, 720, backgroundHandle, TRUE);
     }
 
     // ========================================
-    // ‰œ‚Ì•ºm
+    // å¥¥ã®å…µå£«
     // ========================================
     if (soldierBackHandle >= 0)
     {
@@ -95,7 +109,7 @@ void TitleScene::Draw()
     }
 
     // ========================================
-    // è‘O‚Ì•ºm
+    // æ‰‹å‰ã®å…µå£«
     // ========================================
     if (soldierFrontHandle >= 0)
     {
@@ -109,47 +123,47 @@ void TitleScene::Draw()
     }
 
     // ========================================
-   // •ºm‚Ì–ÚF‹­‚¢ÔF”­Œõ
+   // å…µå£«ã®ç›®ï¼šå¼·ã„èµ¤è‰²ç™ºå…‰
    // ========================================
 
-   // ‚ä‚Á‚­‚è–¾–Å
+   // ã‚†ã£ãã‚Šæ˜æ»…
     float glow = (sinf(t * 2.5f) + 1.0f) * 0.5f;
 
-    // ”­Œõ‚Ì‹­‚³
+    // ç™ºå…‰ã®å¼·ã•
     int glowAlpha = 100 + (int)(glow * 155.0f);
 
-    // –Ú‚ÌˆÊ’u
-    int eyeX[2] = { 980, 994 };
-    int eyeY[2] = { 352, 350 };
+    // ç›®ã®ä½ç½®
+    int eyeX[2] = { 980, 993.5 };
+    int eyeY[2] = { 352, 349 };
 
     for (int i = 0; i < 2; i++)
     {
-        // ŠO‘¤‚Ì‚Ú‚ñ‚â‚è‚µ‚½Ô‚¢Œõ
+        // å¤–å´ã®ã¼ã‚“ã‚„ã‚Šã—ãŸèµ¤ã„å…‰
         SetDrawBlendMode(DX_BLENDMODE_ADD, glowAlpha / 5);
         DrawCircle(eyeX[i], eyeY[i], 10, GetColor(255, 0, 0), TRUE);
 
-        // ’†ŠÔ‚ÌÔ‚¢Œõ
+        // ä¸­é–“ã®èµ¤ã„å…‰
         SetDrawBlendMode(DX_BLENDMODE_ADD, glowAlpha / 3);
         DrawCircle(eyeX[i], eyeY[i], 6, GetColor(255, 0, 0), TRUE);
 
-        // “à‘¤‚Ì‹­‚¢Ô‚¢Œõ
+        // å†…å´ã®å¼·ã„èµ¤ã„å…‰
         SetDrawBlendMode(DX_BLENDMODE_ADD, glowAlpha);
         DrawCircle(eyeX[i], eyeY[i], 2, GetColor(255, 30, 30), TRUE);
 
-        // ’†S‚Ì”’‚¢Œõ
+        // ä¸­å¿ƒã®ç™½ã„å…‰
         SetDrawBlendMode(DX_BLENDMODE_ADD, glowAlpha);
         DrawCircle(eyeX[i], eyeY[i], 1, GetColor(255, 220, 220), TRUE);
     }
 
-    // •`‰æİ’è‚ğ–ß‚·
+    // æç”»è¨­å®šã‚’æˆ»ã™
     SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
     // ========================================
-    // ‰ŒF2‘w‚Å‚ä‚Á‚­‚è—¬‚·
+    // ç…™ï¼š2å±¤ã§ã‚†ã£ãã‚Šæµã™
     // ========================================
     if (smokeHandle >= 0)
     {
-        // ‰œ‚Ì‰Œ
+        // å¥¥ã®ç…™
         float smokeX1 = sinf(t * 0.15f) * 35.0f;
 
         SetDrawBlendMode(DX_BLENDMODE_ALPHA, 45);
@@ -160,7 +174,7 @@ void TitleScene::Draw()
             smokeHandle, TRUE
         );
 
-        // è‘O‚Ì‰Œ
+        // æ‰‹å‰ã®ç…™
         float smokeX2 = cosf(t * 0.10f) * 55.0f;
 
         SetDrawBlendMode(DX_BLENDMODE_ALPHA, 75);
@@ -175,11 +189,11 @@ void TitleScene::Draw()
     }
 
     // ========================================
-    // Ô‚¢Œx“”F–¾–Å
+    // èµ¤ã„è­¦å‘Šç¯ï¼šæ˜æ»…
     // ========================================
     if (lightHandle >= 0)
     {
-        // ‚ä‚Á‚­‚è–¾‚é‚³‚ğ•Ï‚¦‚é
+        // ã‚†ã£ãã‚Šæ˜ã‚‹ã•ã‚’å¤‰ãˆã‚‹
         float lightPulse = (sinf(t * 1.5f) + 1.0f) * 0.5f;
 
         int lightAlpha = 35 + (int)(lightPulse * 90.0f);
@@ -195,23 +209,23 @@ void TitleScene::Draw()
     }
 
     // ========================================
- // eFc‰¡”ä‚ğˆÛ‚µ‚½ŠŠ‚ç‚©‚ÈŒÄ‹zƒAƒjƒ[ƒVƒ‡ƒ“
+ // éŠƒï¼šç¸¦æ¨ªæ¯”ã‚’ç¶­æŒã—ãŸæ»‘ã‚‰ã‹ãªå‘¼å¸ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³
  // ========================================
     if (weaponHandle >= 0)
     {
-        // ‰æ‘œ‚ÌŒ³ƒTƒCƒY‚ğæ“¾
+        // ç”»åƒã®å…ƒã‚µã‚¤ã‚ºã‚’å–å¾—
         int imageW = 0;
         int imageH = 0;
         GetGraphSize(weaponHandle, &imageW, &imageH);
 
-        // c‰¡”ä‚ğˆÛ‚µ‚ÄŠg‘å
+        // ç¸¦æ¨ªæ¯”ã‚’ç¶­æŒã—ã¦æ‹¡å¤§
         float scale = 0.50f;
 
-        // ‚ä‚Á‚­‚è‚µ‚½ŒÄ‹z‚Ì—h‚ê
+        // ã‚†ã£ãã‚Šã—ãŸå‘¼å¸ã®æºã‚Œ
         float x = sinf(t * 0.65f) * 5.0f;
         float y = cosf(t * 0.85f) * 4.0f;
 
-        // ‰æ–Ê‰º‚©‚ç‚Í‚İo‚·‚æ‚¤‚É”z’u
+        // ç”»é¢ä¸‹ã‹ã‚‰ã¯ã¿å‡ºã™ã‚ˆã†ã«é…ç½®
         float drawX = 1010.0f + x;
         float drawY = 590.0f + y;
 
@@ -225,13 +239,13 @@ void TitleScene::Draw()
         );
     }
 
-    // ƒ^ƒCƒgƒ‹
+    // ã‚¿ã‚¤ãƒˆãƒ«
    // ========================================
-   // ƒ^ƒCƒgƒ‹FƒOƒŠƒbƒ`{‘–¸ü
+   // ã‚¿ã‚¤ãƒˆãƒ«ï¼šã‚°ãƒªãƒƒãƒï¼‹èµ°æŸ»ç·š
    // ========================================
     if (titleFont >= 0)                            
     {
-        // ‚½‚Ü‚ÉƒOƒŠƒbƒ`‚ğ”­¶‚³‚¹‚é
+        // ãŸã¾ã«ã‚°ãƒªãƒƒãƒã‚’ç™ºç”Ÿã•ã›ã‚‹
         bool glitch = (animationTimer % 180 < 5);
 
         int glitchX = 0;
@@ -242,13 +256,13 @@ void TitleScene::Draw()
         }
 
         // ========================================
-        // Ô‚ÆÂ‚ÌFƒYƒŒ
+        // èµ¤ã¨é’ã®è‰²ã‚ºãƒ¬
         // ========================================
         if (glitch)
         {
             SetDrawBlendMode(DX_BLENDMODE_ALPHA, 150);
 
-            // Ô‚¢c‘œ
+            // èµ¤ã„æ®‹åƒ
             DrawStringToHandle(
                 94 + glitchX + 5, 105,
                 "SLOW",
@@ -256,7 +270,7 @@ void TitleScene::Draw()
                 titleFont
             );
 
-            // Â‚¢c‘œ
+            // é’ã„æ®‹åƒ
             DrawStringToHandle(
                 94 + glitchX - 5, 105,
                 "SLOW",
@@ -268,7 +282,7 @@ void TitleScene::Draw()
         }
 
         // ========================================
-        // ’Êí‚Ìƒ^ƒCƒgƒ‹•¶š
+        // é€šå¸¸ã®ã‚¿ã‚¤ãƒˆãƒ«æ–‡å­—
         // ========================================
         DrawStringToHandle(
             94 + glitchX, 105,
@@ -278,18 +292,18 @@ void TitleScene::Draw()
         );
 
         // ========================================
-        // ‘–¸üF•¶š‚Ìã‚ğŒõ‚ª’Ê‰ß
+        // èµ°æŸ»ç·šï¼šæ–‡å­—ã®ä¸Šã‚’å…‰ãŒé€šé
         // ========================================
 
-        // 3•büŠú‚Åã‚©‚ç‰º‚Ö
+        // 3ç§’å‘¨æœŸã§ä¸Šã‹ã‚‰ä¸‹ã¸
         float scanProgress = fmodf(t, 3.0f) / 3.0f;
 
         int scanY = 105 + (int)(scanProgress * 120.0f);
 
-        // ƒ^ƒCƒgƒ‹‚Ì”ÍˆÍ‚¾‚¯‚É•`‰æ
+        // ã‚¿ã‚¤ãƒˆãƒ«ã®ç¯„å›²ã ã‘ã«æç”»
         SetDrawArea(94, 105, 450, 225);
 
-        // ‚Ú‚ñ‚â‚è‚µ‚½Œõ
+        // ã¼ã‚“ã‚„ã‚Šã—ãŸå…‰
         SetDrawBlendMode(DX_BLENDMODE_ADD, 45);
 
         DrawBox(
@@ -299,7 +313,7 @@ void TitleScene::Draw()
             TRUE
         );
 
-        // ’†S‚Ì×‚¢Œõ
+        // ä¸­å¿ƒã®ç´°ã„å…‰
         SetDrawBlendMode(DX_BLENDMODE_ADD, 120);
 
         DrawLine(
@@ -309,25 +323,25 @@ void TitleScene::Draw()
             2
         );
 
-        // •`‰æİ’è‚ğ–ß‚·
+        // æç”»è¨­å®šã‚’æˆ»ã™
         SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
         SetDrawArea(0, 0, 1280, 720);
 
         // ========================================
-// ‰¡•ûŒü‚ÌƒOƒŠƒbƒ`ƒmƒCƒY
-// ========================================
+        // æ¨ªæ–¹å‘ã®ã‚°ãƒªãƒƒãƒãƒã‚¤ã‚º
+        // ========================================
         if (animationTimer % 180 < 8)
         {
-            // ƒOƒŠƒbƒ`‚·‚é•¶š‚Ì‰¡‘Ñ
+            // ã‚°ãƒªãƒƒãƒã™ã‚‹æ–‡å­—ã®æ¨ªå¸¯
             int glitchY = 120 + (animationTimer * 17) % 85;
 
-            // ‰¡‚É‘å‚«‚­ƒYƒ‰‚·
+            // æ¨ªã«å¤§ããã‚ºãƒ©ã™
             int glitchOffset = (animationTimer % 2 == 0) ? 18 : -18;
 
-            // ‰¡‘Ñ‚Ì”ÍˆÍ‚¾‚¯•`‰æ
+            // æ¨ªå¸¯ã®ç¯„å›²ã ã‘æç”»
             SetDrawArea(94, glitchY, 450, glitchY + 12);
 
-            // Ô‚¢ƒYƒŒ
+            // èµ¤ã„ã‚ºãƒ¬
             DrawStringToHandle(
                 94 + glitchOffset + 4,
                 105,
@@ -336,7 +350,7 @@ void TitleScene::Draw()
                 titleFont
             );
 
-            // ”’‚¢ƒYƒŒ
+            // ç™½ã„ã‚ºãƒ¬
             DrawStringToHandle(
                 94 + glitchOffset,
                 105,
@@ -345,7 +359,7 @@ void TitleScene::Draw()
                 titleFont
             );
 
-            // Â‚¢ƒYƒŒ
+            // é’ã„ã‚ºãƒ¬
             SetDrawBlendMode(DX_BLENDMODE_ALPHA, 130);
 
             DrawStringToHandle(
@@ -358,7 +372,7 @@ void TitleScene::Draw()
 
             SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
 
-            // •`‰æ”ÍˆÍ‚ğ–ß‚·
+            // æç”»ç¯„å›²ã‚’æˆ»ã™
             SetDrawArea(0, 0, 1280, 720);
         }
     }
@@ -380,7 +394,7 @@ void TitleScene::Draw()
         );
     }
 
-    // ‘I‘ğ˜g
+    // é¸æŠæ 
     int frameY = (int)menuFrameY;
     int menuGlowAlpha = 90 + (int)(sinf(t * 0.075f) * 50.0f);
 
@@ -404,7 +418,7 @@ void TitleScene::Draw()
         GetColor(255, 80, 80), TRUE
     );
 
-    // ƒƒjƒ…[•¶š
+    // ãƒ¡ãƒ‹ãƒ¥ãƒ¼æ–‡å­—
     const char* menus[4] =
     {
         "GAME START",
@@ -429,7 +443,7 @@ void TitleScene::Draw()
     }
 
     // ========================================
-    // FPS•\¦
+    // FPSè¡¨ç¤º
     // ========================================
     static int fpsTimer = GetNowCount();
     static int frameCount = 0;
@@ -447,7 +461,7 @@ void TitleScene::Draw()
         fpsTimer = now;
     }
 
-    // ¶ã‚É•\¦
+    // å·¦ä¸Šã«è¡¨ç¤º
     DrawFormatString(
         10, 10,
         GetColor(0, 255, 0),
@@ -458,7 +472,7 @@ void TitleScene::Draw()
 
 
 // ========================================
-// ŠJn”»’è
+// é–‹å§‹åˆ¤å®š
 // ========================================
 bool TitleScene::IsStartSelected()
 {
@@ -471,7 +485,21 @@ bool TitleScene::IsStartSelected()
 }
 
 // ========================================
-// I—¹ˆ—
+// HOW TO PLAY é¸æŠåˆ¤å®š
+// ========================================
+bool TitleScene::IsHowToPlaySelected()
+{
+    if (howToPlayRequested)
+    {
+        howToPlayRequested = false;
+        return true;
+    }
+
+    return false;
+}
+
+// ========================================
+// çµ‚äº†å‡¦ç†
 // ========================================
 void TitleScene::Finalize()
 {
@@ -501,4 +529,386 @@ void TitleScene::Finalize()
     titleFont = -1;
     subtitleFont = -1;
     menuFont = -1;
+}
+
+// ========================================
+// HOW TO PLAYç”»é¢ã®æç”»
+// ========================================
+void TitleScene::DrawHowToPlay()
+{
+    // ã‚¿ã‚¤ãƒˆãƒ«ã¨åŒã˜èƒŒæ™¯
+    DrawExtendGraph(
+        0, 0, 1280, 720,
+        backgroundHandle,
+        FALSE
+    );
+
+    // èƒŒæ™¯ã‚’æš—ãã™ã‚‹
+    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 180);
+
+    DrawBox(
+        0, 0, 1280, 720,
+        GetColor(0, 0, 0),
+        TRUE
+    );
+
+    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+    // è–„ã„ã‚¹ãƒ¢ãƒ¼ã‚¯
+    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 35);
+
+    DrawExtendGraph(
+        0, 0, 1280, 720,
+        smokeHandle,
+        TRUE
+    );
+
+    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+    // è¦‹å‡ºã—
+    DrawStringToHandle(
+        100, 75,
+        "HOW TO PLAY",
+        GetColor(255, 70, 70),
+        menuFont
+    );
+
+    DrawLine(
+        100, 125, 1180, 125,
+        GetColor(180, 45, 45)
+    );
+
+    // æ“ä½œèª¬æ˜
+    int white = GetColor(230, 230, 230);
+    int blue = GetColor(100, 190, 255);
+
+    DrawStringToHandle(150, 170, "W A S D", blue, menuFont);
+    DrawStringToHandle(500, 170, "MOVE", white, menuFont);
+
+    DrawStringToHandle(150, 235, "MOUSE", blue, menuFont);
+    DrawStringToHandle(500, 235, "LOOK AROUND", white, menuFont);
+
+    DrawStringToHandle(150, 300, "LEFT CLICK", blue, menuFont);
+    DrawStringToHandle(500, 300, "SHOOT", white, menuFont);
+
+    DrawStringToHandle(150, 365, "R", blue, menuFont);
+    DrawStringToHandle(500, 365, "RELOAD", white, menuFont);
+
+    DrawStringToHandle(150, 430, "LEFT SHIFT", blue, menuFont);
+    DrawStringToHandle(500, 430, "SLOW TIME", white, menuFont);
+
+    // æˆ»ã‚‹æ¡ˆå†…
+    DrawStringToHandle(
+        420, 620,
+        "PRESS ESC TO RETURN",
+        GetColor(255, 100, 100),
+        menuFont
+    );
+}
+
+// ========================================
+// OPTIONé¸æŠåˆ¤å®š
+// ========================================
+bool TitleScene::IsOptionSelected()
+{
+    if (optionRequested)
+    {
+        optionRequested = false;
+        return true;
+    }
+
+    return false;
+}
+
+// ========================================
+// OPTIONç”»é¢ã®æç”»
+// ========================================
+void TitleScene::DrawOption()
+{
+    // ã‚¿ã‚¤ãƒˆãƒ«ã¨åŒã˜èƒŒæ™¯
+    DrawExtendGraph(
+        0, 0, 1280, 720,
+        backgroundHandle,
+        FALSE
+    );
+
+    // èƒŒæ™¯ã‚’æš—ãã™ã‚‹
+    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 180);
+
+    DrawBox(
+        0, 0, 1280, 720,
+        GetColor(0, 0, 0),
+        TRUE
+    );
+
+    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+    // è–„ã„ã‚¹ãƒ¢ãƒ¼ã‚¯
+    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 35);
+
+    DrawExtendGraph(
+        0, 0, 1280, 720,
+        smokeHandle,
+        TRUE
+    );
+
+    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+    // ã‚¿ã‚¤ãƒˆãƒ«
+    DrawStringToHandle(
+        100, 75,
+        "OPTION",
+        GetColor(255, 70, 70),
+        menuFont
+    );
+
+    DrawLine(
+        100, 125, 1180, 125,
+        GetColor(180, 45, 45)
+    );
+
+    // è¨­å®šé …ç›®
+    int white = GetColor(230, 230, 230);
+    int blue = GetColor(100, 190, 255);
+
+    // é¸æŠä¸­ã®é …ç›®ã‚’èµ¤ãè¡¨ç¤º
+    int selectedColor = GetColor(255, 80, 80);
+
+    int optionColors[4] =
+    {
+        selectedOption == 0 ? selectedColor : white,
+        selectedOption == 1 ? selectedColor : white,
+        selectedOption == 2 ? selectedColor : white,
+        selectedOption == 3 ? selectedColor : white
+    };
+
+    // å¤‰æ›´å¾Œ
+    DrawStringToHandle(
+        150, 180, "MOUSE SENSITIVITY",
+        optionColors[0], menuFont
+    );
+
+    DrawStringToHandle(
+        150, 270, "FIELD OF VIEW",
+        optionColors[1], menuFont
+    );
+
+    DrawStringToHandle(
+        150, 360, "DISPLAY MODE",
+        optionColors[2], menuFont
+    );
+
+    DrawStringToHandle(
+        150, 450, "VOLUME",
+        optionColors[3], menuFont
+    );
+
+    // ãƒã‚¦ã‚¹æ„Ÿåº¦ã®æ•°å€¤
+    DrawFormatStringToHandle(
+        850, 180,
+        blue,
+        menuFont,
+        "%d / 100",
+        mouseSensitivityLevel
+    );
+
+    // ã‚²ãƒ¼ã‚¸ã®èƒŒæ™¯
+    DrawBox(
+        850, 225,
+        1150, 245,
+        GetColor(45, 50, 60),
+        TRUE
+    );
+
+    // ã‚²ãƒ¼ã‚¸ã®ç¾åœ¨å€¤ï¼ˆ1ã€œ100ï¼‰
+    int gaugeWidth =
+        (mouseSensitivityLevel - 1) * 300 / 99;
+
+    DrawBox(
+        850, 225,
+        850 + gaugeWidth, 245,
+        GetColor(70, 160, 255),
+        TRUE
+    );
+
+    // ã‚²ãƒ¼ã‚¸ã®æ 
+    DrawBox(
+        850, 225,
+        1150, 245,
+        GetColor(150, 170, 190),
+        FALSE
+    );
+
+    // ãƒã‚¦ã‚¹ã§æ“ä½œã§ãã‚‹ã“ã¨ã‚’è¡¨ç¤º
+    DrawString(
+        850, 252,
+        "CLICK / DRAG",
+        GetColor(140, 150, 165)
+    );
+
+    DrawStringToHandle(
+        850, 270, "90",
+        blue, menuFont
+    );
+
+    DrawStringToHandle(
+        850, 360, "WINDOW",
+        blue, menuFont
+    );
+
+    DrawStringToHandle(
+        850, 450, "100%",
+        blue, menuFont
+    );
+
+    // æˆ»ã‚‹æ¡ˆå†…
+    DrawStringToHandle(
+        420, 620,
+        "PRESS ESC TO RETURN",
+        GetColor(255, 100, 100),
+        menuFont
+    );
+}
+
+// ========================================
+// OPTIONç”»é¢ã®æ›´æ–°
+// ========================================
+void TitleScene::UpdateOption()
+{
+    bool up = CheckHitKey(KEY_INPUT_UP);
+    bool down = CheckHitKey(KEY_INPUT_DOWN);
+
+    // ä¸Šã‚­ãƒ¼
+    if (up && !oldOptionUp)
+    {
+        selectedOption--;
+
+        if (selectedOption < 0)
+        {
+            selectedOption = 3;
+        }
+    }
+
+    // ä¸‹ã‚­ãƒ¼
+    if (down && !oldOptionDown)
+    {
+        selectedOption++;
+
+        if (selectedOption > 3)
+        {
+            selectedOption = 0;
+        }
+    }
+
+    oldOptionUp = up;
+    oldOptionDown = down;
+
+    // ========================================
+   // ãƒã‚¦ã‚¹æ„Ÿåº¦ã®å¤‰æ›´
+   // ========================================
+    bool left = CheckHitKey(KEY_INPUT_LEFT) != 0;
+    bool right = CheckHitKey(KEY_INPUT_RIGHT) != 0;
+
+    // é•·æŠ¼ã—æ™‚é–“ã‚’è¨˜éŒ²
+    if (left)
+    {
+        optionLeftHold++;
+    }
+    else
+    {
+        optionLeftHold = 0;
+    }
+
+    if (right)
+    {
+        optionRightHold++;
+    }
+    else
+    {
+        optionRightHold = 0;
+    }
+
+    // æ„Ÿåº¦ãŒé¸æŠã•ã‚Œã¦ã„ã‚‹ã¨ã
+    if (selectedOption == 0)
+    {
+        // å·¦ã‚­ãƒ¼ï¼šæœ€åˆã®1å› + é•·æŠ¼ã—
+        if (left &&
+            (!oldOptionLeft ||
+                (optionLeftHold > 15 && optionLeftHold % 3 == 0)))
+        {
+            mouseSensitivityLevel--;
+        }
+
+        // å³ã‚­ãƒ¼ï¼šæœ€åˆã®1å› + é•·æŠ¼ã—
+        if (right &&
+            (!oldOptionRight ||
+                (optionRightHold > 15 && optionRightHold % 3 == 0)))
+        {
+            mouseSensitivityLevel++;
+        }
+    }
+
+    // ========================================
+    // ãƒã‚¦ã‚¹ã§ã‚²ãƒ¼ã‚¸ã‚’æ“ä½œ
+    // ========================================
+    int mouseX, mouseY;
+    GetMousePoint(&mouseX, &mouseY);
+
+    bool mouseLeft =
+        (GetMouseInput() & MOUSE_INPUT_LEFT) != 0;
+
+    // ã‚²ãƒ¼ã‚¸ã®ç¯„å›²
+    const int gaugeLeft = 850;
+    const int gaugeRight = 1150;
+    const int gaugeTop = 225;
+    const int gaugeBottom = 245;
+
+    // ã‚²ãƒ¼ã‚¸ã‚’ã‚¯ãƒªãƒƒã‚¯ã—ãŸã‚‰ãƒ‰ãƒ©ãƒƒã‚°é–‹å§‹
+    if (mouseLeft && !draggingSensitivity &&
+        mouseX >= gaugeLeft && mouseX <= gaugeRight &&
+        mouseY >= gaugeTop - 10 && mouseY <= gaugeBottom + 10)
+    {
+        draggingSensitivity = true;
+        selectedOption = 0;
+    }
+
+    // ãƒ‰ãƒ©ãƒƒã‚°ä¸­ã¯ãƒã‚¦ã‚¹ä½ç½®ã‹ã‚‰æ„Ÿåº¦ã‚’è¨ˆç®—
+    if (mouseLeft && draggingSensitivity)
+    {
+        int relativeX = mouseX - gaugeLeft;
+
+        if (relativeX < 0) relativeX = 0;
+        if (relativeX > 300) relativeX = 300;
+
+        mouseSensitivityLevel =
+            1 + relativeX * 99 / 300;
+    }
+
+    // ãƒœã‚¿ãƒ³ã‚’é›¢ã—ãŸã‚‰ãƒ‰ãƒ©ãƒƒã‚°çµ‚äº†
+    if (!mouseLeft)
+    {
+        draggingSensitivity = false;
+    }
+
+    // æ„Ÿåº¦ã‚’1ã€œ100ã«åˆ¶é™
+    if (mouseSensitivityLevel < 1)
+    {
+        mouseSensitivityLevel = 1;
+    }
+
+    if (mouseSensitivityLevel > 100)
+    {
+        mouseSensitivityLevel = 100;
+    }
+
+    oldOptionLeft = left;
+    oldOptionRight = right;
+}
+
+// ========================================
+// ãƒã‚¦ã‚¹æ„Ÿåº¦ã‚’å–å¾—
+// ========================================
+float TitleScene::GetMouseSensitivity()
+{
+    return mouseSensitivityLevel * 0.00006f;
 }

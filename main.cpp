@@ -293,8 +293,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
     int centerX = 1280 / 2;
     int centerY = 720 / 2;
 
-    SetMouseDispFlag(FALSE);
-    SetMousePoint(centerX, centerY);
+    // タイトル画面ではカーソルを表示
+    SetMouseDispFlag(TRUE);
 
     ResetGame();
 
@@ -317,6 +317,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
         // ========================================
         if (gameState == GAME_STATE_TITLE)
         {
+            // カーソルを表示して自由に動かせる
+            SetMouseDispFlag(TRUE);
+
             titleScene.Update();
             titleScene.Draw();
 
@@ -324,7 +327,46 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
             {
                 ResetGame();
                 gameState = GAME_STATE_PLAY;
+
+                // ゲーム開始時はカーソルを非表示
+                SetMouseDispFlag(FALSE);
                 SetMousePoint(centerX, centerY);
+            }
+
+            // HOW TO PLAYを選んだとき
+            if (titleScene.IsHowToPlaySelected())
+            {
+                gameState = GAME_STATE_HOW_TO_PLAY;
+            }
+
+            // OPTIONを選んだとき
+            if (titleScene.IsOptionSelected())
+            {
+                gameState = GAME_STATE_OPTION;
+            }
+
+            ScreenFlip();
+            continue;
+        }
+
+        // ========================================
+        // OPTION画面
+        // ========================================
+        if (gameState == GAME_STATE_OPTION)
+        {
+            SetMouseDispFlag(TRUE);
+
+            titleScene.UpdateOption();
+
+            // OPTIONで変更した感度をゲームに反映
+            mouseSensitivity = titleScene.GetMouseSensitivity();
+
+            titleScene.DrawOption();
+
+            // ESCキーでタイトルに戻る
+            if (CheckHitKey(KEY_INPUT_ESCAPE))
+            {
+                gameState = GAME_STATE_TITLE;
             }
 
             ScreenFlip();

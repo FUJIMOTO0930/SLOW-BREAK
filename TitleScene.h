@@ -29,11 +29,42 @@ private:
     bool oldDown = false;
     bool oldEnter = false;
     bool startRequested = false;
+    bool howToPlayRequested = false;
+    bool optionRequested = false;
+  
+    int breakGraphHandle = -1;
+
+    // OPTION画面の選択項目
+    int selectedOption = 0;
+
+    // マウス感度設定
+    int mouseSensitivityLevel = 50;
+
+    bool oldOptionLeft = false;
+    bool oldOptionRight = false;
+
+    // 左右キー長押し用
+    int optionLeftHold = 0;
+    int optionRightHold = 0;
+
+    // マウスドラッグ用
+    bool draggingSensitivity = false;
+
+    // OPTION画面のキー入力
+    bool oldOptionUp = false;
+    bool oldOptionDown = false;
 
 public:
     void Initialize();
     void Update();
     void Draw();
+    void DrawHowToPlay();
+    void DrawOption();
+    void UpdateOption();
+    float GetMouseSensitivity();
     void Finalize();
+
     bool IsStartSelected();
+    bool IsHowToPlaySelected();
+    bool IsOptionSelected();
 };
