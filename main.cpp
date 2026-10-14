@@ -165,6 +165,38 @@ bool IsBulletHitWall(VECTOR pos)
     return false;
 }
 
+
+// ========================================
+// 弾の移動経路と壁の当たり判定
+// ========================================
+bool IsBulletPathHitWall(VECTOR start, VECTOR end, VECTOR* hitPosition)
+{
+    VECTOR movement = VSub(end, start);
+    float distance = VSize(movement);
+
+    // 0.1単位以下で細かく判定
+    int steps = (int)ceilf(distance / 0.1f);
+    if (steps < 1) steps = 1;
+
+    for (int i = 1; i <= steps; i++)
+    {
+        float t = (float)i / steps;
+        VECTOR pos = VAdd(start, VScale(movement, t));
+
+        if (IsBulletHitWall(pos))
+        {
+            if (hitPosition != nullptr)
+            {
+                *hitPosition = pos;
+            }
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
 // ========================================
 // 着弾エフェクト発生
 // ========================================
@@ -317,6 +349,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
         // ========================================
         if (gameState == GAME_STATE_TITLE)
         {
+            SetMouseDispFlag(TRUE);
+
             // カーソルを表示して自由に動かせる
             SetMouseDispFlag(TRUE);
 
@@ -345,9 +379,39 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
                 gameState = GAME_STATE_OPTION;
             }
 
+            // EXITを選んだらゲームを終了
+            if (titleScene.IsExitSelected())
+            {
+                break;
+            }
+
             ScreenFlip();
             continue;
         }
+
+
+        // ========================================
+        // HOW TO PLAY画面
+        // ========================================
+        if (gameState == GAME_STATE_HOW_TO_PLAY)
+        {
+            // マウスカーソルを表示
+            SetMouseDispFlag(TRUE);
+
+            // 操作説明画面を描画
+            titleScene.DrawHowToPlay();
+
+            // ESCキーでタイトルへ戻る
+            if (CheckHitKey(KEY_INPUT_ESCAPE))
+            {
+                gameState = GAME_STATE_TITLE;
+            }
+
+            ScreenFlip();
+            continue;
+        }
+
+
 
         // ========================================
         // OPTION画面
@@ -481,36 +545,47 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
                 -sinf(cameraYaw)
             );
 
+
             // ====================================
             // WASD移動
             // ====================================
             VECTOR nextPos = playerPos;
+            VECTOR moveDirection = VGet(0.0f, 0.0f, 0.0f);
 
             // 前後移動
             if (CheckHitKey(KEY_INPUT_W))
             {
-                nextPos.x += forward.x * moveSpeed;
-                nextPos.z += forward.z * moveSpeed;
+                moveDirection = VAdd(moveDirection, forward);
             }
 
             if (CheckHitKey(KEY_INPUT_S))
             {
-                nextPos.x -= forward.x * moveSpeed;
-                nextPos.z -= forward.z * moveSpeed;
+                moveDirection = VSub(moveDirection, forward);
             }
 
-            // 横移動
+            // 左右移動
             if (CheckHitKey(KEY_INPUT_D))
             {
-                nextPos.x += right.x * moveSpeed;
-                nextPos.z += right.z * moveSpeed;
+                moveDirection = VAdd(moveDirection, right);
             }
 
             if (CheckHitKey(KEY_INPUT_A))
             {
-                nextPos.x -= right.x * moveSpeed;
-                nextPos.z -= right.z * moveSpeed;
+                moveDirection = VSub(moveDirection, right);
             }
+
+            // 斜め移動でも速度が変わらないように正規化
+            if (VSize(moveDirection) > 0.0f)
+            {
+                moveDirection = VNorm(moveDirection);
+
+                nextPos = VAdd(
+                    playerPos,
+                    VScale(moveDirection, moveSpeed)
+                );
+            }
+
+
 
             // X方向だけ移動できるか確認
             VECTOR checkX = playerPos;
@@ -628,32 +703,25 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
                     continue;
                 }
 
-                bullets[i].position = VAdd(
-                    bullets[i].position,
-                    VScale(
-                        bullets[i].direction,
-                        bullets[i].speed
-                    )
+
+                VECTOR oldPosition = bullets[i].position;
+
+                VECTOR nextPosition = VAdd(
+                    oldPosition,
+                    VScale(bullets[i].direction, bullets[i].speed)
                 );
 
-                // 壁に当たったら弾を消す
-                if (IsBulletHitWall(bullets[i].position))
-                {
-                    CreateImpactEffect(bullets[i].position);
+                VECTOR hitPosition;
 
+                if (IsBulletPathHitWall(oldPosition, nextPosition, &hitPosition))
+                {
+                    CreateImpactEffect(hitPosition);
                     bullets[i].active = false;
                     continue;
                 }
 
-                VECTOR distance = VSub(
-                    bullets[i].position,
-                    playerPos
-                );
+                bullets[i].position = nextPosition;
 
-                if (VSize(distance) > 100.0f)
-                {
-                    bullets[i].active = false;
-                }
             }
 
             // ====================================
@@ -702,65 +770,69 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
                 }
             }
 
+
             if (allEnemiesDefeated)
             {
                 gameState = GAME_STATE_CLEAR;
                 isSlow = false;
             }
 
-            // ====================================
-            // 敵更新
-            // ====================================
-            for (int i = 0; i < MAX_ENEMIES; i++)
+            // クリア確定後は敵の更新・射撃を行わない
+            if (gameState == GAME_STATE_PLAY)
             {
-                enemies[i].Update(playerPos);
-            }
-
-            // ====================================
-            // 敵射撃
-            // ====================================
-            for (int e = 0; e < MAX_ENEMIES; e++)
-            {
-                if (!enemies[e].active || enemies[e].dying)
+                // ====================================
+                // 敵更新
+                // ====================================
+                for (int i = 0; i < MAX_ENEMIES; i++)
                 {
-                    continue;
+                    enemies[i].Update(playerPos);
                 }
 
-                enemies[e].shootTimer--;
-
-                if (enemies[e].shootTimer <= 0)
+                // ====================================
+                // 敵射撃
+                // ====================================
+                for (int e = 0; e < MAX_ENEMIES; e++)
                 {
-                    for (int b = 0; b < MAX_ENEMY_BULLETS; b++)
+                    if (!enemies[e].active || enemies[e].dying)
                     {
-                        if (!enemyBullets[b].active)
-                        {
-                            enemyBullets[b].active = true;
-                            enemyBullets[b].position = enemies[e].position;
-
-                            // 残像位置初期化
-                            for (int t = 0; t < TRAIL_COUNT; t++)
-                            {
-                                enemyBullets[b].trailPositions[t] =
-                                    enemyBullets[b].position;
-                            }
-
-                            VECTOR direction = VSub(
-                                playerPos,
-                                enemies[e].position
-                            );
-
-                            enemyBullets[b].direction =
-                                VNorm(direction);
-
-                            enemyBullets[b].speed = 0.15f;
-
-                            break;
-                        }
+                        continue;
                     }
 
-                    enemies[e].shootTimer = 60;
+                    enemies[e].shootTimer--;
+
+                    if (enemies[e].shootTimer <= 0)
+                    {
+                        for (int b = 0; b < MAX_ENEMY_BULLETS; b++)
+                        {
+                            if (!enemyBullets[b].active)
+                            {
+                                enemyBullets[b].active = true;
+                                enemyBullets[b].position = enemies[e].position;
+
+                                for (int t = 0; t < TRAIL_COUNT; t++)
+                                {
+                                    enemyBullets[b].trailPositions[t] =
+                                        enemyBullets[b].position;
+                                }
+
+                                VECTOR direction = VSub(
+                                    playerPos,
+                                    enemies[e].position
+                                );
+
+                                enemyBullets[b].direction = VNorm(direction);
+                                enemyBullets[b].speed = 0.15f;
+                                break;
+                            }
+                        }
+
+                        enemies[e].shootTimer = 60;
+                    }
                 }
             }
+
+
+
 
             // ====================================
             // 敵弾移動
@@ -791,22 +863,25 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
                     currentSpeed *= slowRate;
                 }
 
-                enemyBullets[i].position = VAdd(
-                    enemyBullets[i].position,
-                    VScale(
-                        enemyBullets[i].direction,
-                        currentSpeed
-                    )
+
+                VECTOR oldPosition = enemyBullets[i].position;
+
+                VECTOR nextPosition = VAdd(
+                    oldPosition,
+                    VScale(enemyBullets[i].direction, currentSpeed)
                 );
 
-                // 壁に当たったら敵弾を消す
-                if (IsBulletHitWall(enemyBullets[i].position))
-                {
-                    CreateImpactEffect(enemyBullets[i].position);
+                VECTOR hitPosition;
 
+                if (IsBulletPathHitWall(oldPosition, nextPosition, &hitPosition))
+                {
+                    CreateImpactEffect(hitPosition);
                     enemyBullets[i].active = false;
                     continue;
                 }
+
+                enemyBullets[i].position = nextPosition;
+
 
                 VECTOR distance = VSub(
                     enemyBullets[i].position,
@@ -1052,8 +1127,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
         }
 
         // ====================================
-// 着弾エフェクト描画
-// ====================================
+        // 着弾エフェクト描画
+        // ====================================
         for (int i = 0; i < MAX_IMPACT_EFFECTS; i++)
         {
             if (!impactEffects[i].active)

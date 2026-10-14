@@ -1,6 +1,49 @@
 #include "Enemy.h"
 #include <math.h>
 
+
+// ========================================
+// 敵と壁の当たり判定
+// ========================================
+static bool IsEnemyHitWall(VECTOR pos, float radius)
+{
+    // マップ外周
+    if (pos.x - radius < -20.0f) return true;
+    if (pos.x + radius > 20.0f) return true;
+    if (pos.z - radius < -20.0f) return true;
+    if (pos.z + radius > 20.0f) return true;
+
+    // 左側の仕切り
+    if (pos.x + radius > -8.0f &&
+        pos.x - radius < -7.5f &&
+        pos.z + radius > 5.0f &&
+        pos.z - radius < 16.0f)
+    {
+        return true;
+    }
+
+    // 右側の仕切り
+    if (pos.x + radius > 7.5f &&
+        pos.x - radius < 8.0f &&
+        pos.z + radius > 5.0f &&
+        pos.z - radius < 16.0f)
+    {
+        return true;
+    }
+
+    // 中央の遮蔽物
+    if (pos.x + radius > -2.0f &&
+        pos.x - radius < 2.0f &&
+        pos.z + radius > 7.0f &&
+        pos.z - radius < 8.0f)
+    {
+        return true;
+    }
+
+    return false;
+}
+
+
 // ========================================
 // 初期化
 // ========================================
@@ -73,18 +116,34 @@ void Enemy::Update(VECTOR playerPosition)
         -sinf(angleY)
     );
 
-    // 左右移動
-    position.x += sideDirection.x * moveSpeed * moveDirection;
-    position.z += sideDirection.z * moveSpeed * moveDirection;
+    // ====================================
+    // 壁を考慮した左右移動
+    // ====================================
+    VECTOR nextPosition = position;
 
-    // 一定時間ごとに方向転換
-    moveTimer--;
+    nextPosition.x += sideDirection.x * moveSpeed * moveDirection;
+    nextPosition.z += sideDirection.z * moveSpeed * moveDirection;
 
-    if (moveTimer <= 0)
+    // 壁にぶつかったら方向転換
+    if (IsEnemyHitWall(nextPosition, radius))
     {
         moveDirection *= -1;
         moveTimer = 120;
     }
+    else
+    {
+        position = nextPosition;
+
+        // 一定時間ごとに方向転換
+        moveTimer--;
+
+        if (moveTimer <= 0)
+        {
+            moveDirection *= -1;
+            moveTimer = 120;
+        }
+    }
+
 }
 
 // ========================================
