@@ -243,7 +243,12 @@ void Enemy::Draw()
     // ====================================
     if (modelHandle != -1)
     {
-        MV1SetPosition(modelHandle, position);
+        MV1SetScale(modelHandle, VGet(0.01f, 0.01f, 0.01f));
+        // ロボットの表示位置を調整
+        VECTOR modelPosition = position;
+        modelPosition.y += 1.0f;
+
+        MV1SetPosition(modelHandle, modelPosition);
         MV1SetRotationXYZ(
             modelHandle,
             VGet(0.0f, angleY, 0.0f)

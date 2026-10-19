@@ -77,6 +77,9 @@ const int RELOAD_TIME = 90;
 const int MAX_ENEMIES = 3;
 Enemy enemies[MAX_ENEMIES];
 
+// 仮の敵モデル
+int robotModelHandle = -1;
+
 // ========================================
 // 敵弾
 // ========================================
@@ -283,6 +286,12 @@ void ResetGame()
     enemies[1].Initialize(VGet(0.0f, 1.0f, 15.0f));
     enemies[2].Initialize(VGet(4.0f, 1.0f, 12.0f));
 
+    // 3体の敵に仮モデルを設定
+    for (int i = 0; i < MAX_ENEMIES; i++)
+    {
+        enemies[i].modelHandle = robotModelHandle;
+    }
+
     // 射撃開始時間をずらす
     for (int i = 0; i < MAX_ENEMIES; i++)
     {
@@ -336,6 +345,20 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
     int oldMouseInput = 0;
 
     SetDrawMode(DX_DRAWMODE_BILINEAR);
+
+    // ====================================
+    // 仮の敵モデル読み込み
+    // ====================================
+    robotModelHandle = MV1LoadModel("./resources/robot.mv1");
+    if (robotModelHandle == -1)
+    {
+        MessageBox(
+            NULL,
+            "robot.mv1 の読み込みに失敗しました",
+            "モデル読み込みエラー",
+            MB_OK
+        );
+    }
 
     // ====================================
     // ゲームループ
@@ -1469,6 +1492,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
     DeleteFontToHandle(clearFont);
 
     titleScene.Finalize();
+
+    if (robotModelHandle != -1)
+    {
+        MV1DeleteModel(robotModelHandle);
+    }
 
     DxLib_End();
 
