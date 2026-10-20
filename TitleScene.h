@@ -28,9 +28,11 @@ private:
     bool oldUp = false;
     bool oldDown = false;
     bool oldEnter = false;
+    bool oldMouseLeft = false;
     bool startRequested = false;
     bool howToPlayRequested = false;
     bool optionRequested = false;
+    bool exitRequested = false;
   
     int breakGraphHandle = -1;
 
@@ -67,4 +69,5 @@ public:
     bool IsStartSelected();
     bool IsHowToPlaySelected();
     bool IsOptionSelected();
+    bool IsExitSelected();
 };

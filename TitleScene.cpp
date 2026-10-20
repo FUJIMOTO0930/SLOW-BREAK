@@ -32,6 +32,7 @@ void TitleScene::Initialize()
 // ========================================
 // 更新
 // ========================================
+
 void TitleScene::Update()
 {
     animationTimer++;
@@ -40,6 +41,9 @@ void TitleScene::Update()
     bool down = CheckHitKey(KEY_INPUT_DOWN) != 0;
     bool enter = CheckHitKey(KEY_INPUT_RETURN) != 0;
 
+    // ========================================
+    // キーボードによるメニュー選択
+    // ========================================
     if (up && !oldUp)
     {
         selectedMenu--;
@@ -55,6 +59,56 @@ void TitleScene::Update()
     oldUp = up;
     oldDown = down;
 
+    // ========================================
+    // マウスによるメニュー選択
+    // ========================================
+    int mouseX = 0;
+    int mouseY = 0;
+    GetMousePoint(&mouseX, &mouseY);
+
+    bool mouseLeft = (GetMouseInput() & MOUSE_INPUT_LEFT) != 0;
+    bool mouseClicked = mouseLeft && !oldMouseLeft;
+
+    // メニューの表示位置に合わせた判定
+    for (int i = 0; i < 4; i++)
+    {
+        int menuY = 350 + i * 52;
+
+        if (mouseX >= 85 && mouseX <= 480 &&
+            mouseY >= menuY && mouseY <= menuY + 44)
+        {
+            selectedMenu = i;
+
+            // 左クリックで決定
+            if (mouseClicked)
+            {
+                if (selectedMenu == 0)
+                {
+                    startRequested = true;
+                }
+                else if (selectedMenu == 1)
+                {
+                    howToPlayRequested = true;
+                }
+                else if (selectedMenu == 2)
+                {
+                    optionRequested = true;
+                }
+                else if (selectedMenu == 3)
+                {
+                    exitRequested = true;
+                }
+            }
+
+            break;
+        }
+    }
+
+    oldMouseLeft = mouseLeft;
+
+    // ========================================
+    // Enterキーで決定
+    // ========================================
     if (enter && !oldEnter)
     {
         if (selectedMenu == 0)
@@ -69,11 +123,17 @@ void TitleScene::Update()
         {
             optionRequested = true;
         }
+        else if (selectedMenu == 3)
+        {
+            exitRequested = true;
+        }
     }
 
     oldEnter = enter;
 
+    // ========================================
     // 赤枠を滑らかに移動
+    // ========================================
     float targetY = 350.0f + selectedMenu * 52.0f;
     menuFrameY += (targetY - menuFrameY) * 0.18f;
 }
@@ -113,7 +173,7 @@ void TitleScene::Draw()
     // ========================================
     if (soldierFrontHandle >= 0)
     {
-        float y = sinf(t * 0.018f) * 3.0f;
+        float y = 0.0f;
 
         DrawRotaGraphF(
             955.0f, 455.0f + y,
@@ -133,8 +193,8 @@ void TitleScene::Draw()
     int glowAlpha = 100 + (int)(glow * 155.0f);
 
     // 目の位置
-    int eyeX[2] = { 980, 993.5 };
-    int eyeY[2] = { 352, 349 };
+    int eyeX[2] = { 980, 993 };
+    int eyeY[2] = { 353, 350 };
 
     for (int i = 0; i < 2; i++)
     {
@@ -911,4 +971,18 @@ void TitleScene::UpdateOption()
 float TitleScene::GetMouseSensitivity()
 {
     return mouseSensitivityLevel * 0.00006f;
+}
+
+// ========================================
+// EXIT選択判定
+// ========================================
+bool TitleScene::IsExitSelected()
+{
+    if (exitRequested)
+    {
+        exitRequested = false;
+        return true;
+    }
+
+    return false;
 }
