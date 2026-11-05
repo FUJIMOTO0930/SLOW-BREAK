@@ -96,36 +96,77 @@ bool IsHitWall(VECTOR pos)
 {
     const float playerRadius = 0.4f;
 
-    // マップ外周
-    if (pos.x - playerRadius < -20.0f) return true;
-    if (pos.x + playerRadius > 20.0f) return true;
-    if (pos.z + playerRadius > 20.0f) return true;
+    // マップ外周（前後）
+    if (pos.z - playerRadius < -30.0f) return true;
+    if (pos.z + playerRadius > 30.0f) return true;
 
-    // 左側の仕切り
-    if (pos.x + playerRadius > -8.0f &&
-        pos.x - playerRadius < -7.5f &&
-        pos.z + playerRadius > 5.0f &&
-        pos.z - playerRadius < 16.0f)
+    // 左右の研究室を含む外側の限界
+    if (pos.x - playerRadius < -50.0f) return true;
+    if (pos.x + playerRadius > 50.0f) return true;
+
+    // 左壁：入口以外は通れない
+    if (pos.x - playerRadius < -30.0f &&
+        pos.x + playerRadius > -30.5f &&
+        (pos.z - playerRadius < -4.0f ||
+            pos.z + playerRadius > 4.0f))
     {
         return true;
     }
 
-    // 右側の仕切り
-    if (pos.x + playerRadius > 7.5f &&
-        pos.x - playerRadius < 8.0f &&
-        pos.z + playerRadius > 5.0f &&
-        pos.z - playerRadius < 16.0f)
+    // 右壁：入口以外は通れない
+    if (pos.x + playerRadius > 30.0f &&
+        pos.x - playerRadius < 30.5f &&
+        (pos.z - playerRadius < -4.0f ||
+            pos.z + playerRadius > 4.0f))
     {
         return true;
     }
 
-    // 中央の遮蔽物
-    if (pos.x + playerRadius > -2.0f &&
-        pos.x - playerRadius < 2.0f &&
-        pos.z + playerRadius > 7.0f &&
-        pos.z - playerRadius < 8.0f)
+    // 研究室の前後の壁
+    if (pos.x - playerRadius < -30.0f ||
+        pos.x + playerRadius > 30.0f)
     {
-        return true;
+        if (pos.z - playerRadius < -10.0f ||
+            pos.z + playerRadius > 10.0f)
+        {
+            return true;
+        }
+    }
+
+    // 柱4本の当たり判定
+    const float pillarX[] = { -16.0f, 16.0f };
+    const float pillarZ[] = { -13.0f, 13.0f };
+
+    for (int x = 0; x < 2; x++)
+    {
+        for (int z = 0; z < 2; z++)
+        {
+            if (pos.x + playerRadius > pillarX[x] - 1.0f &&
+                pos.x - playerRadius < pillarX[x] + 1.0f &&
+                pos.z + playerRadius > pillarZ[z] - 1.0f &&
+                pos.z - playerRadius < pillarZ[z] + 1.0f)
+            {
+                return true;
+            }
+        }
+    }
+
+    // 研究設備4つの当たり判定
+    const float deviceX[] = { -7.0f, 7.0f };
+    const float deviceZ[] = { -7.0f, 7.0f };
+
+    for (int x = 0; x < 2; x++)
+    {
+        for (int z = 0; z < 2; z++)
+        {
+            if (pos.x + playerRadius > deviceX[x] - 2.0f &&
+                pos.x - playerRadius < deviceX[x] + 2.0f &&
+                pos.z + playerRadius > deviceZ[z] - 1.0f &&
+                pos.z - playerRadius < deviceZ[z] + 1.0f)
+            {
+                return true;
+            }
+        }
     }
 
     return false;
@@ -136,30 +177,61 @@ bool IsHitWall(VECTOR pos)
 // ========================================
 bool IsBulletHitWall(VECTOR pos)
 {
-    // マップ外周
-    if (pos.x < -20.0f) return true;
-    if (pos.x > 20.0f) return true;
-    if (pos.z > 20.0f) return true;
+    // 外側の限界
+    if (pos.x < -50.0f || pos.x > 50.0f) return true;
+    if (pos.z < -30.0f || pos.z > 30.0f) return true;
 
-    // 左側の仕切り
-    if (pos.x > -8.0f && pos.x < -7.5f &&
-        pos.z > 5.0f && pos.z < 16.0f)
+    // 左右の入口以外の壁
+    if ((pos.x >= -30.5f && pos.x <= -30.0f) ||
+        (pos.x >= 30.0f && pos.x <= 30.5f))
     {
-        return true;
+        if (pos.z < -4.0f || pos.z > 4.0f)
+            return true;
     }
 
-    // 右側の仕切り
-    if (pos.x > 7.5f && pos.x < 8.0f &&
-        pos.z > 5.0f && pos.z < 16.0f)
+    // 研究室の前後の壁
+    if (pos.x < -30.0f || pos.x > 30.0f)
     {
-        return true;
+        if (pos.z < -10.0f || pos.z > 10.0f)
+            return true;
     }
 
-    // 中央の遮蔽物
-    if (pos.x > -2.0f && pos.x < 2.0f &&
-        pos.z > 7.0f && pos.z < 8.0f)
+    // 柱4本の当たり判定
+    const float pillarX[] = { -16.0f, 16.0f };
+    const float pillarZ[] = { -13.0f, 13.0f };
+
+    for (int x = 0; x < 2; x++)
     {
-        return true;
+        for (int z = 0; z < 2; z++)
+        {
+            if (pos.x >= pillarX[x] - 1.0f &&
+                pos.x <= pillarX[x] + 1.0f &&
+                pos.z >= pillarZ[z] - 1.0f &&
+                pos.z <= pillarZ[z] + 1.0f)
+            {
+                return true;
+            }
+        }
+    }
+
+    // 研究設備4つの当たり判定
+    const float deviceX[] = { -7.0f, 7.0f };
+    const float deviceZ[] = { -7.0f, 7.0f };
+
+    for (int x = 0; x < 2; x++)
+    {
+        for (int z = 0; z < 2; z++)
+        {
+            if (pos.x >= deviceX[x] - 2.0f &&
+                pos.x <= deviceX[x] + 2.0f &&
+                pos.z >= deviceZ[z] - 1.0f &&
+                pos.z <= deviceZ[z] + 1.0f &&
+                pos.y >= 0.0f &&
+                pos.y <= 1.6f)
+            {
+                return true;
+            }
+        }
     }
 
     return false;
@@ -988,71 +1060,235 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
         );
 
         // ====================================
-        // 床
+        // 近未来研究施設：中央戦闘エリア
         // ====================================
+
+        // 床
         DrawCube3D(
-            VGet(-20.0f, -0.5f, -20.0f),
-            VGet(20.0f, 0.0f, 20.0f),
-            GetColor(100, 100, 100),
-            GetColor(100, 100, 100),
+            VGet(-30.0f, -0.5f, -30.0f),
+            VGet(30.0f, 0.0f, 30.0f),
+            GetColor(75, 85, 100),
+            GetColor(95, 110, 125),
             TRUE
         );
 
-        // ====================================
-        // 研究施設マップ
-        // ====================================
         // 奥の壁
         DrawCube3D(
-            VGet(-20.0f, 0.0f, 20.0f),
-            VGet(20.0f, 4.0f, 20.5f),
-            GetColor(120, 125, 135),
-            GetColor(80, 85, 95),
+            VGet(-30.0f, 0.0f, 30.0f),
+            VGet(30.0f, 8.0f, 30.5f),
+            GetColor(120, 135, 150),
+            GetColor(70, 85, 100),
             TRUE
         );
 
-        // 左の壁
+        // 手前の壁
         DrawCube3D(
-            VGet(-20.5f, 0.0f, -20.0f),
-            VGet(-20.0f, 4.0f, 20.0f),
-            GetColor(120, 125, 135),
-            GetColor(80, 85, 95),
+            VGet(-30.0f, 0.0f, -30.5f),
+            VGet(30.0f, 8.0f, -30.0f),
+            GetColor(120, 135, 150),
+            GetColor(70, 85, 100),
             TRUE
         );
 
-        // 右の壁
+        // ====================================
+        // 左右の壁：研究室への入口付き
+        // ====================================
+
+        // 左壁：手前側
         DrawCube3D(
-            VGet(20.0f, 0.0f, -20.0f),
-            VGet(20.5f, 4.0f, 20.0f),
-            GetColor(120, 125, 135),
-            GetColor(80, 85, 95),
+            VGet(-30.5f, 0.0f, -30.0f),
+            VGet(-30.0f, 8.0f, -4.0f),
+            GetColor(120, 135, 150),
+            GetColor(70, 85, 100), TRUE
+        );
+
+        // 左壁：奥側
+        DrawCube3D(
+            VGet(-30.5f, 0.0f, 4.0f),
+            VGet(-30.0f, 8.0f, 30.0f),
+            GetColor(120, 135, 150),
+            GetColor(70, 85, 100), TRUE
+        );
+
+        // 右壁：手前側
+        DrawCube3D(
+            VGet(30.0f, 0.0f, -30.0f),
+            VGet(30.5f, 8.0f, -4.0f),
+            GetColor(120, 135, 150),
+            GetColor(70, 85, 100), TRUE
+        );
+
+        // 右壁：奥側
+        DrawCube3D(
+            VGet(30.0f, 0.0f, 4.0f),
+            VGet(30.5f, 8.0f, 30.0f),
+            GetColor(120, 135, 150),
+            GetColor(70, 85, 100), TRUE
+        );
+
+        // ====================================
+        // 近未来研究施設：柱4本
+        // ====================================
+
+        // 左奥の柱
+        DrawCube3D(
+            VGet(-17.0f, 0.0f, 12.0f),
+            VGet(-15.0f, 8.0f, 14.0f),
+            GetColor(100, 125, 145),
+            GetColor(60, 85, 110),
             TRUE
         );
 
-        // 左側の仕切り
+        // 右奥の柱
         DrawCube3D(
-            VGet(-8.0f, 0.0f, 5.0f),
-            VGet(-7.5f, 3.0f, 16.0f),
-            GetColor(100, 105, 115),
-            GetColor(70, 75, 85),
+            VGet(15.0f, 0.0f, 12.0f),
+            VGet(17.0f, 8.0f, 14.0f),
+            GetColor(100, 125, 145),
+            GetColor(60, 85, 110),
             TRUE
         );
 
-        // 右側の仕切り
+        // 左手前の柱
         DrawCube3D(
-            VGet(7.5f, 0.0f, 5.0f),
-            VGet(8.0f, 3.0f, 16.0f),
-            GetColor(100, 105, 115),
-            GetColor(70, 75, 85),
+            VGet(-17.0f, 0.0f, -14.0f),
+            VGet(-15.0f, 8.0f, -12.0f),
+            GetColor(100, 125, 145),
+            GetColor(60, 85, 110),
             TRUE
         );
 
-        // 中央の遮蔽物
+        // 右手前の柱
         DrawCube3D(
-            VGet(-2.0f, 0.0f, 7.0f),
-            VGet(2.0f, 1.5f, 8.0f),
-            GetColor(80, 90, 100),
-            GetColor(60, 70, 80),
+            VGet(15.0f, 0.0f, -14.0f),
+            VGet(17.0f, 8.0f, -12.0f),
+            GetColor(100, 125, 145),
+            GetColor(60, 85, 110),
             TRUE
+        );
+
+        // ====================================
+        // 近未来研究施設：研究設備4つ
+        // ====================================
+
+        const float deviceX[] = { -7.0f, 7.0f };
+        const float deviceZ[] = { -7.0f, 7.0f };
+
+        for (int x = 0; x < 2; x++)
+        {
+            for (int z = 0; z < 2; z++)
+            {
+                float px = deviceX[x];
+                float pz = deviceZ[z];
+
+                // 装置本体
+                DrawCube3D(
+                    VGet(px - 2.0f, 0.0f, pz - 1.0f),
+                    VGet(px + 2.0f, 1.5f, pz + 1.0f),
+                    GetColor(65, 85, 105),
+                    GetColor(35, 55, 75),
+                    TRUE
+                );
+
+                // ====================================
+                // 上部の発光パネル
+                // ====================================
+
+                // 照明の影響を受けない
+                SetUseLighting(FALSE);
+
+                // パネルの土台（暗いフレーム）
+                SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+                DrawCube3D(
+                    VGet(px - 1.85f, 1.5f, pz - 0.9f),
+                    VGet(px + 1.85f, 1.56f, pz + 0.9f),
+                    GetColor(15, 35, 50),
+                    GetColor(15, 35, 50),
+                    TRUE
+                );
+
+                // フレームの内側に青い発光パネル
+                DrawCube3D(
+                    VGet(px - 1.7f, 1.56f, pz - 0.75f),
+                    VGet(px + 1.7f, 1.59f, pz + 0.75f),
+                    GetColor(80, 230, 255),
+                    GetColor(80, 230, 255),
+                    TRUE
+                );
+
+                // パネルのすぐ上に弱い光を重ねる
+                SetWriteZBuffer3D(FALSE);
+                SetDrawBlendMode(DX_BLENDMODE_ADD, 65);
+
+                DrawCube3D(
+                    VGet(px - 1.75f, 1.60f, pz - 0.8f),
+                    VGet(px + 1.75f, 1.62f, pz + 0.8f),
+                    GetColor(30, 150, 255),
+                    GetColor(30, 150, 255),
+                    TRUE
+                );
+
+                // 描画設定を戻す
+                SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+                SetWriteZBuffer3D(TRUE);
+                SetUseLighting(TRUE);
+            }
+        }
+
+        // ====================================
+        // 近未来研究施設：左右の研究室
+        // ====================================
+
+        // 左研究室の床
+        DrawCube3D(
+            VGet(-50.0f, -0.5f, -10.0f),
+            VGet(-30.0f, 0.0f, 10.0f),
+            GetColor(80, 95, 110),
+            GetColor(60, 75, 90),
+            TRUE
+        );
+
+        // 右研究室の床
+        DrawCube3D(
+            VGet(30.0f, -0.5f, -10.0f),
+            VGet(50.0f, 0.0f, 10.0f),
+            GetColor(80, 95, 110),
+            GetColor(60, 75, 90),
+            TRUE
+        );
+
+        // 左研究室：奥と手前の壁
+        DrawCube3D(VGet(-50, 0, -10.5f), VGet(-30, 5, -10),
+            GetColor(115, 135, 150), GetColor(65, 85, 100), TRUE);
+
+        DrawCube3D(VGet(-50, 0, 10), VGet(-30, 5, 10.5f),
+            GetColor(115, 135, 150), GetColor(65, 85, 100), TRUE);
+
+        // 左研究室：外側の壁
+        DrawCube3D(VGet(-50.5f, 0, -10), VGet(-50, 5, 10),
+            GetColor(115, 135, 150), GetColor(65, 85, 100), TRUE);
+
+        // 右研究室：奥と手前の壁
+        DrawCube3D(
+            VGet(30.5f, 0, -10.5f),
+            VGet(50, 5, -10),
+            GetColor(115, 135, 150),
+            GetColor(65, 85, 100), TRUE
+        );
+
+        DrawCube3D(
+            VGet(30.5f, 0, 10),
+            VGet(50, 5, 10.5f),
+            GetColor(115, 135, 150),
+            GetColor(65, 85, 100), TRUE
+        );
+
+        // 右研究室：外側の壁
+        DrawCube3D(
+            VGet(50, 0, -10),
+            VGet(50.5f, 5, 10),
+            GetColor(115, 135, 150),
+            GetColor(65, 85, 100), TRUE
         );
 
         // ====================================

@@ -8,36 +8,45 @@
 static bool IsEnemyHitWall(VECTOR pos, float radius)
 {
     // マップ外周
-    if (pos.x - radius < -20.0f) return true;
-    if (pos.x + radius > 20.0f) return true;
-    if (pos.z - radius < -20.0f) return true;
-    if (pos.z + radius > 20.0f) return true;
+    if (pos.x - radius < -30.0f) return true;
+    if (pos.x + radius > 30.0f) return true;
+    if (pos.z - radius < -30.0f) return true;
+    if (pos.z + radius > 30.0f) return true;
 
-    // 左側の仕切り
-    if (pos.x + radius > -8.0f &&
-        pos.x - radius < -7.5f &&
-        pos.z + radius > 5.0f &&
-        pos.z - radius < 16.0f)
+    // 柱4本の当たり判定
+    const float pillarX[] = { -16.0f, 16.0f };
+    const float pillarZ[] = { -13.0f, 13.0f };
+
+    for (int x = 0; x < 2; x++)
     {
-        return true;
+        for (int z = 0; z < 2; z++)
+        {
+            if (pos.x + radius > pillarX[x] - 1.0f &&
+                pos.x - radius < pillarX[x] + 1.0f &&
+                pos.z + radius > pillarZ[z] - 1.0f &&
+                pos.z - radius < pillarZ[z] + 1.0f)
+            {
+                return true;
+            }
+        }
     }
 
-    // 右側の仕切り
-    if (pos.x + radius > 7.5f &&
-        pos.x - radius < 8.0f &&
-        pos.z + radius > 5.0f &&
-        pos.z - radius < 16.0f)
-    {
-        return true;
-    }
+    // 研究設備4つの当たり判定
+    const float deviceX[] = { -7.0f, 7.0f };
+    const float deviceZ[] = { -7.0f, 7.0f };
 
-    // 中央の遮蔽物
-    if (pos.x + radius > -2.0f &&
-        pos.x - radius < 2.0f &&
-        pos.z + radius > 7.0f &&
-        pos.z - radius < 8.0f)
+    for (int x = 0; x < 2; x++)
     {
-        return true;
+        for (int z = 0; z < 2; z++)
+        {
+            if (pos.x + radius > deviceX[x] - 2.0f &&
+                pos.x - radius < deviceX[x] + 2.0f &&
+                pos.z + radius > deviceZ[z] - 1.0f &&
+                pos.z - radius < deviceZ[z] + 1.0f)
+            {
+                return true;
+            }
+        }
     }
 
     return false;
