@@ -96,41 +96,73 @@ bool IsHitWall(VECTOR pos)
 {
     const float playerRadius = 0.4f;
 
-    // マップ外周（前後）
-    if (pos.z - playerRadius < -30.0f) return true;
-    if (pos.z + playerRadius > 30.0f) return true;
+    // ====================================
+    // マップ外周・各部屋の壁
+    // ====================================
 
-    // 左右の研究室を含む外側の限界
+ // ====================================
+// 【制御室】入口・外周の当たり判定
+// ====================================
+
+// 制御室の入口（X=-4～4）
+    bool atControlEntrance =
+        pos.x - playerRadius >= -4.0f &&
+        pos.x + playerRadius <= 4.0f;
+
+    // 制御室の範囲
+    bool inControlRoom =
+        pos.x >= -12.5f && pos.x <= 12.5f &&
+        pos.z >= 30.0f && pos.z <= 45.0f;
+
+    // 奥の壁：入口以外は通れない
+    if (pos.z + playerRadius > 30.0f &&
+        pos.z - playerRadius < 30.5f &&
+        !atControlEntrance)
+    {
+        return true;
+    }
+
+    // 制御室の奥側の限界
+    if (pos.z + playerRadius > 45.0f)
+    {
+        return true;
+    }
+
+    // 手前の外周
+    if (pos.z - playerRadius < -30.0f)
+        return true;
+
+    // 左右の外周
     if (pos.x - playerRadius < -50.0f) return true;
     if (pos.x + playerRadius > 50.0f) return true;
 
-    // 左壁：入口以外は通れない
-    if (pos.x - playerRadius < -30.0f &&
-        pos.x + playerRadius > -30.5f &&
-        (pos.z - playerRadius < -4.0f ||
-            pos.z + playerRadius > 4.0f))
+    // 左右研究室の入口以外の壁
+    if ((pos.x - playerRadius < -30.0f &&
+        pos.x + playerRadius > -30.5f) ||
+        (pos.x + playerRadius > 30.0f &&
+            pos.x - playerRadius < 30.5f))
     {
-        return true;
+        if (pos.z - playerRadius < -4.0f ||
+            pos.z + playerRadius > 4.0f)
+            return true;
     }
 
-    // 右壁：入口以外は通れない
-    if (pos.x + playerRadius > 30.0f &&
-        pos.x - playerRadius < 30.5f &&
-        (pos.z - playerRadius < -4.0f ||
-            pos.z + playerRadius > 4.0f))
-    {
-        return true;
-    }
-
-    // 研究室の前後の壁
+    // 左右研究室の前後の壁
     if (pos.x - playerRadius < -30.0f ||
         pos.x + playerRadius > 30.0f)
     {
         if (pos.z - playerRadius < -10.0f ||
             pos.z + playerRadius > 10.0f)
-        {
             return true;
-        }
+    }
+
+    // 制御室の左右・奥の壁
+    if (inControlRoom)
+    {
+        if (pos.x - playerRadius < -12.5f ||
+            pos.x + playerRadius > 12.5f ||
+            pos.z + playerRadius > 45.0f)
+            return true;
     }
 
     // 柱4本の当たり判定
@@ -177,9 +209,34 @@ bool IsHitWall(VECTOR pos)
 // ========================================
 bool IsBulletHitWall(VECTOR pos)
 {
-    // 外側の限界
+    // ========================================
+    // 外側の限界・奥の制御室
+    // ========================================
+
+    // 手前の外周
+    if (pos.z < -30.0f) return true;
+
+    // 左右の外周
     if (pos.x < -50.0f || pos.x > 50.0f) return true;
-    if (pos.z < -30.0f || pos.z > 30.0f) return true;
+
+    // 中央ホールと制御室の境界
+    // 入口（X=-4～4）以外は壁
+    if (pos.z >= 30.0f && pos.z <= 30.5f)
+    {
+        if (pos.x < -4.0f || pos.x > 4.0f)
+            return true;
+    }
+
+    // 制御室の左右の壁
+    if (pos.z > 30.5f)
+    {
+        if (pos.x < -12.5f || pos.x > 12.5f)
+            return true;
+    }
+
+    // 制御室の奥の壁
+    if (pos.z > 45.0f)
+        return true;
 
     // 左右の入口以外の壁
     if ((pos.x >= -30.5f && pos.x <= -30.0f) ||
@@ -384,6 +441,39 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
     SetWriteZBuffer3D(TRUE);
     SetCameraNearFar(0.1f, 1000.0f);
 
+// ====================================
+// 開発用：プレイヤーの懐中電灯
+// ====================================
+
+int flashlight = CreateSpotLightHandle(
+    VGet(0.0f, 1.7f, 0.0f),    // ライトの位置
+    VGet(0.0f, 0.0f, 1.0f),    // 照らす方向
+    DX_PI_F / 5.0f,           // 光の広がり
+    DX_PI_F / 8.0f,           // 中心の明るい範囲
+    25.0f,                    // 光が届く距離
+    0.0f,
+    0.02f,
+    0.0f
+);
+
+// 懐中電灯の色
+SetLightDifColorHandle(
+    flashlight,
+    GetColorF(0.85f, 0.90f, 1.0f, 1.0f)
+);
+
+    // ====================================
+    // 研究施設：基本ライティング
+    // ====================================
+
+    // 標準ライトを有効化
+    SetLightEnable(TRUE);
+
+    // 全体を薄暗く照らす
+    SetGlobalAmbientLight(GetColorF(0.15f, 0.18f, 0.22f, 1.0f));
+    // 標準ライトの明るさを弱める
+    SetLightDifColor(GetColorF(0.15f, 0.15f, 0.18f, 1.0f));
+
     // ====================================
     // フォント
     // ====================================
@@ -415,6 +505,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
     while (ProcessMessage() == 0)
     {
         ClearDrawScreen();
+
+        // ========================================
+        // 【開発用】ESCキーでゲームを完全終了
+        // ※ 完成時はこの部分をコメントアウト
+        // ========================================
+        if (CheckHitKey(KEY_INPUT_ESCAPE))
+        {
+            break;
+        }
+        // ========================================
 
         // ========================================
         // タイトル画面
@@ -1060,6 +1160,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
         );
 
         // ====================================
+        // 懐中電灯：プレイヤーに追従
+        // ====================================
+
+        // プレイヤーの視線方向
+        VECTOR flashlightDir = VNorm(
+            VSub(cameraTarget, playerPos)
+        );
+
+        // 懐中電灯の位置と方向を更新
+        SetLightPositionHandle(flashlight, playerPos);
+        SetLightDirectionHandle(flashlight, flashlightDir);
+
+        // ====================================
         // 近未来研究施設：中央戦闘エリア
         // ====================================
 
@@ -1072,19 +1185,38 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
             TRUE
         );
 
-        // 奥の壁
+        // ====================================
+        // 奥の壁：制御室への入口
+        // ====================================
+
+        // 左側
         DrawCube3D(
             VGet(-30.0f, 0.0f, 30.0f),
-            VGet(30.0f, 8.0f, 30.5f),
+            VGet(-4.0f, 12.0f, 30.5f),
             GetColor(120, 135, 150),
-            GetColor(70, 85, 100),
-            TRUE
+            GetColor(70, 85, 100), TRUE
+        );
+
+        // 右側
+        DrawCube3D(
+            VGet(4.0f, 0.0f, 30.0f),
+            VGet(30.0f, 12.0f, 30.5f),
+            GetColor(120, 135, 150),
+            GetColor(70, 85, 100), TRUE
+        );
+
+        // 入口の上部（高さ4まで通行可能）
+        DrawCube3D(
+            VGet(-4.0f, 4.0f, 30.0f),
+            VGet(4.0f, 12.0f, 30.5f),
+            GetColor(120, 135, 150),
+            GetColor(70, 85, 100), TRUE
         );
 
         // 手前の壁
         DrawCube3D(
             VGet(-30.0f, 0.0f, -30.5f),
-            VGet(30.0f, 8.0f, -30.0f),
+            VGet(30.0f, 12.0f, -30.0f),
             GetColor(120, 135, 150),
             GetColor(70, 85, 100),
             TRUE
@@ -1097,7 +1229,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
         // 左壁：手前側
         DrawCube3D(
             VGet(-30.5f, 0.0f, -30.0f),
-            VGet(-30.0f, 8.0f, -4.0f),
+            VGet(-30.0f, 12.0f, -4.0f),
             GetColor(120, 135, 150),
             GetColor(70, 85, 100), TRUE
         );
@@ -1105,7 +1237,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
         // 左壁：奥側
         DrawCube3D(
             VGet(-30.5f, 0.0f, 4.0f),
-            VGet(-30.0f, 8.0f, 30.0f),
+            VGet(-30.0f, 12.0f, 30.0f),
             GetColor(120, 135, 150),
             GetColor(70, 85, 100), TRUE
         );
@@ -1113,7 +1245,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
         // 右壁：手前側
         DrawCube3D(
             VGet(30.0f, 0.0f, -30.0f),
-            VGet(30.5f, 8.0f, -4.0f),
+            VGet(30.5f, 12.0f, -4.0f),
             GetColor(120, 135, 150),
             GetColor(70, 85, 100), TRUE
         );
@@ -1121,7 +1253,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
         // 右壁：奥側
         DrawCube3D(
             VGet(30.0f, 0.0f, 4.0f),
-            VGet(30.5f, 8.0f, 30.0f),
+            VGet(30.5f, 12.0f, 30.0f),
             GetColor(120, 135, 150),
             GetColor(70, 85, 100), TRUE
         );
@@ -1133,7 +1265,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
         // 左奥の柱
         DrawCube3D(
             VGet(-17.0f, 0.0f, 12.0f),
-            VGet(-15.0f, 8.0f, 14.0f),
+            VGet(-15.0f, 12.0f, 14.0f),
             GetColor(100, 125, 145),
             GetColor(60, 85, 110),
             TRUE
@@ -1142,7 +1274,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
         // 右奥の柱
         DrawCube3D(
             VGet(15.0f, 0.0f, 12.0f),
-            VGet(17.0f, 8.0f, 14.0f),
+            VGet(17.0f, 12.0f, 14.0f),
             GetColor(100, 125, 145),
             GetColor(60, 85, 110),
             TRUE
@@ -1151,7 +1283,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
         // 左手前の柱
         DrawCube3D(
             VGet(-17.0f, 0.0f, -14.0f),
-            VGet(-15.0f, 8.0f, -12.0f),
+            VGet(-15.0f, 12.0f, -12.0f),
             GetColor(100, 125, 145),
             GetColor(60, 85, 110),
             TRUE
@@ -1160,7 +1292,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
         // 右手前の柱
         DrawCube3D(
             VGet(15.0f, 0.0f, -14.0f),
-            VGet(17.0f, 8.0f, -12.0f),
+            VGet(17.0f, 12.0f, -12.0f),
             GetColor(100, 125, 145),
             GetColor(60, 85, 110),
             TRUE
@@ -1258,27 +1390,39 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
         );
 
         // 左研究室：奥と手前の壁
-        DrawCube3D(VGet(-50, 0, -10.5f), VGet(-30, 5, -10),
-            GetColor(115, 135, 150), GetColor(65, 85, 100), TRUE);
+        DrawCube3D(
+            VGet(-50, 0, -10.5f),
+            VGet(-30.5f, 8, -10),
+            GetColor(115, 135, 150),
+            GetColor(65, 85, 100), TRUE
+        );
 
-        DrawCube3D(VGet(-50, 0, 10), VGet(-30, 5, 10.5f),
-            GetColor(115, 135, 150), GetColor(65, 85, 100), TRUE);
+        DrawCube3D(
+            VGet(-50, 0, 10),
+            VGet(-30.5f, 8, 10.5f),
+            GetColor(115, 135, 150),
+            GetColor(65, 85, 100), TRUE
+        );
 
         // 左研究室：外側の壁
-        DrawCube3D(VGet(-50.5f, 0, -10), VGet(-50, 5, 10),
-            GetColor(115, 135, 150), GetColor(65, 85, 100), TRUE);
+        DrawCube3D(
+            VGet(-50.5f, 0, -10),
+            VGet(-50, 8, 10),
+            GetColor(115, 135, 150),
+            GetColor(65, 85, 100), TRUE
+        );
 
         // 右研究室：奥と手前の壁
         DrawCube3D(
             VGet(30.5f, 0, -10.5f),
-            VGet(50, 5, -10),
+            VGet(50, 8, -10),
             GetColor(115, 135, 150),
             GetColor(65, 85, 100), TRUE
         );
 
         DrawCube3D(
             VGet(30.5f, 0, 10),
-            VGet(50, 5, 10.5f),
+            VGet(50, 8, 10.5f),
             GetColor(115, 135, 150),
             GetColor(65, 85, 100), TRUE
         );
@@ -1286,9 +1430,81 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
         // 右研究室：外側の壁
         DrawCube3D(
             VGet(50, 0, -10),
-            VGet(50.5f, 5, 10),
+            VGet(50.5f, 8, 10),
             GetColor(115, 135, 150),
             GetColor(65, 85, 100), TRUE
+        );
+
+        // ====================================
+        // 近未来研究施設：奥の制御室
+        // ====================================
+
+        // 床
+        DrawCube3D(
+            VGet(-12.5f, -0.5f, 30.0f),
+            VGet(12.5f, 0.0f, 45.0f),
+            GetColor(80, 95, 110),
+            GetColor(60, 75, 90), TRUE
+        );
+
+        // 左壁
+        DrawCube3D(
+            VGet(-13.0f, 0.0f, 30.5f),
+            VGet(-12.5f, 8.0f, 45.0f),
+            GetColor(115, 135, 150),
+            GetColor(65, 85, 100), TRUE
+        );
+
+        // 右壁
+        DrawCube3D(
+            VGet(12.5f, 0.0f, 30.5f),
+            VGet(13.0f, 8.0f, 45.0f),
+            GetColor(115, 135, 150),
+            GetColor(65, 85, 100), TRUE
+        );
+
+        // 奥壁
+        DrawCube3D(
+            VGet(-13.0f, 0.0f, 45.0f),
+            VGet(13.0f, 8.0f, 45.5f),
+            GetColor(115, 135, 150),
+            GetColor(65, 85, 100), TRUE
+        );
+
+        // ========================================
+        // 近未来研究施設：天井
+        // ========================================
+
+        // 中央ホール
+        DrawCube3D(
+            VGet(-30, 12.0f, -30),
+            VGet(30, 12.3f, 30),
+            GetColor(85, 100, 115),
+            GetColor(55, 70, 85), TRUE
+        );
+
+        // 左研究室
+        DrawCube3D(
+            VGet(-50, 8.0f, -10),
+            VGet(-30.5f, 8.3f, 10),
+            GetColor(85, 100, 115),
+            GetColor(55, 70, 85), TRUE
+        );
+
+        // 右研究室
+        DrawCube3D(
+            VGet(30.5f, 8.0f, -10),
+            VGet(50, 8.3f, 10),
+            GetColor(85, 100, 115),
+            GetColor(55, 70, 85), TRUE
+        );
+
+        // 奥の制御室
+        DrawCube3D(
+            VGet(-12.5f, 8.0f, 30.5f),
+            VGet(12.5f, 8.3f, 45),
+            GetColor(85, 100, 115),
+            GetColor(55, 70, 85), TRUE
         );
 
         // ====================================
