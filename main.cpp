@@ -422,6 +422,80 @@ void ResetGame()
 
 }
 
+// 壁を細かい平面で描画する
+void DrawWallZ(float x1, float x2, float y1, float y2, float z, float normalZ)
+{
+    const float size = 0.5f;
+
+    for (float x = x1; x < x2; x += size)
+    {
+        for (float y = y1; y < y2; y += size)
+        {
+            float nx = (x + size < x2) ? x + size : x2;
+            float ny = (y + size < y2) ? y + size : y2;
+
+            VERTEX3D vertex[6] = {};
+
+            VECTOR positions[6] = {
+                VGet(x,  y,  z),
+                VGet(x,  ny, z),
+                VGet(nx, y,  z),
+
+                VGet(nx, y,  z),
+                VGet(x,  ny, z),
+                VGet(nx, ny, z)
+            };
+
+            for (int i = 0; i < 6; i++)
+            {
+                vertex[i].pos = positions[i];
+                vertex[i].norm = VGet(0.0f, 0.0f, normalZ);
+                vertex[i].dif = GetColorU8(120, 135, 150, 255);
+                vertex[i].spc = GetColorU8(0, 0, 0, 255);
+            }
+
+            DrawPolygon3D(vertex, 2, DX_NONE_GRAPH, TRUE);
+        }
+    }
+}
+
+// X方向に固定された壁を細かい平面で描画
+void DrawWallX(float z1, float z2, float y1, float y2, float x, float normalX)
+{
+    const float size = 0.5f;
+
+    for (float z = z1; z < z2; z += size)
+    {
+        for (float y = y1; y < y2; y += size)
+        {
+            float nz = (z + size < z2) ? z + size : z2;
+            float ny = (y + size < y2) ? y + size : y2;
+
+            VERTEX3D vertex[6] = {};
+
+            VECTOR positions[6] = {
+                VGet(x, y,  z),
+                VGet(x, ny, z),
+                VGet(x, y,  nz),
+
+                VGet(x, y,  nz),
+                VGet(x, ny, z),
+                VGet(x, ny, nz)
+            };
+
+            for (int i = 0; i < 6; i++)
+            {
+                vertex[i].pos = positions[i];
+                vertex[i].norm = VGet(normalX, 0.0f, 0.0f);
+                vertex[i].dif = GetColorU8(120, 135, 150, 255);
+                vertex[i].spc = GetColorU8(0, 0, 0, 255);
+            }
+
+            DrawPolygon3D(vertex, 2, DX_NONE_GRAPH, TRUE);
+        }
+    }
+}
+
 // ========================================
 // メイン
 // ========================================
@@ -1176,50 +1250,54 @@ SetLightDifColorHandle(
         // 近未来研究施設：中央戦闘エリア
         // ====================================
 
-        // 床
-        DrawCube3D(
-            VGet(-30.0f, -0.5f, -30.0f),
-            VGet(30.0f, 0.0f, 30.0f),
-            GetColor(75, 85, 100),
-            GetColor(95, 110, 125),
-            TRUE
-        );
+        // 床を細かい平面に分割して描画
+        for (float x = -30.0f; x < 30.0f; x += 0.5f)
+        {
+            for (float z = -30.0f; z < 30.0f; z += 0.5f)
+            {
+                VERTEX3D vertex[6] = {};
+
+                VECTOR positions[6] = {
+                    VGet(x, 0.0f, z),
+                    VGet(x, 0.0f, z + 0.5f),
+                    VGet(x + 0.5f, 0.0f, z),
+
+                    VGet(x + 0.5f, 0.0f, z),
+                    VGet(x, 0.0f, z + 0.5f),
+                    VGet(x + 0.5f, 0.0f, z + 0.5f)
+                };
+
+                for (int i = 0; i < 6; i++)
+                {
+                    vertex[i].pos = positions[i];
+                    vertex[i].norm = VGet(0.0f, 1.0f, 0.0f);
+                    vertex[i].dif = GetColorU8(75, 85, 100, 255);
+                    vertex[i].spc = GetColorU8(0, 0, 0, 255);
+                }
+
+                DrawPolygon3D(vertex, 2, DX_NONE_GRAPH, TRUE);
+            }
+        }
 
         // ====================================
         // 奥の壁：制御室への入口
         // ====================================
 
-        // 左側
-        DrawCube3D(
-            VGet(-30.0f, 0.0f, 30.0f),
-            VGet(-4.0f, 12.0f, 30.5f),
-            GetColor(120, 135, 150),
-            GetColor(70, 85, 100), TRUE
-        );
+       // 奥の壁：左側
+        DrawWallZ(-30.0f, -4.0f, 0.0f, 12.0f, 30.0f, -1.0f);
 
-        // 右側
-        DrawCube3D(
-            VGet(4.0f, 0.0f, 30.0f),
-            VGet(30.0f, 12.0f, 30.5f),
-            GetColor(120, 135, 150),
-            GetColor(70, 85, 100), TRUE
-        );
+        // 奥の壁：右側
+        DrawWallZ(4.0f, 30.0f, 0.0f, 12.0f, 30.0f, -1.0f);
 
-        // 入口の上部（高さ4まで通行可能）
-        DrawCube3D(
-            VGet(-4.0f, 4.0f, 30.0f),
-            VGet(4.0f, 12.0f, 30.5f),
-            GetColor(120, 135, 150),
-            GetColor(70, 85, 100), TRUE
-        );
+        // 入口の上部
+        DrawWallZ(-4.0f, 4.0f, 4.0f, 12.0f, 30.0f, -1.0f);
 
         // 手前の壁
-        DrawCube3D(
-            VGet(-30.0f, 0.0f, -30.5f),
-            VGet(30.0f, 12.0f, -30.0f),
-            GetColor(120, 135, 150),
-            GetColor(70, 85, 100),
-            TRUE
+        DrawWallZ(
+            -30.0f, 30.0f,
+            0.0f, 12.0f,
+            -30.0f,
+            1.0f
         );
 
         // ====================================
@@ -1227,37 +1305,16 @@ SetLightDifColorHandle(
         // ====================================
 
         // 左壁：手前側
-        DrawCube3D(
-            VGet(-30.5f, 0.0f, -30.0f),
-            VGet(-30.0f, 12.0f, -4.0f),
-            GetColor(120, 135, 150),
-            GetColor(70, 85, 100), TRUE
-        );
+        DrawWallX(-30.0f, -4.0f, 0.0f, 12.0f, -30.0f, 1.0f);
 
         // 左壁：奥側
-        DrawCube3D(
-            VGet(-30.5f, 0.0f, 4.0f),
-            VGet(-30.0f, 12.0f, 30.0f),
-            GetColor(120, 135, 150),
-            GetColor(70, 85, 100), TRUE
-        );
+        DrawWallX(4.0f, 30.0f, 0.0f, 12.0f, -30.0f, 1.0f);
 
         // 右壁：手前側
-        DrawCube3D(
-            VGet(30.0f, 0.0f, -30.0f),
-            VGet(30.5f, 12.0f, -4.0f),
-            GetColor(120, 135, 150),
-            GetColor(70, 85, 100), TRUE
-        );
+        DrawWallX(-30.0f, -4.0f, 0.0f, 12.0f, 30.0f, -1.0f);
 
         // 右壁：奥側
-        DrawCube3D(
-            VGet(30.0f, 0.0f, 4.0f),
-            VGet(30.5f, 12.0f, 30.0f),
-            GetColor(120, 135, 150),
-            GetColor(70, 85, 100), TRUE
-        );
-
+        DrawWallX(4.0f, 30.0f, 0.0f, 12.0f, 30.0f, -1.0f);
         // ====================================
         // 近未来研究施設：柱4本
         // ====================================
