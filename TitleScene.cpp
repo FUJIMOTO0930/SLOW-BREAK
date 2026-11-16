@@ -303,7 +303,7 @@ void TitleScene::Draw()
    // ========================================
    // タイトル：グリッチ＋走査線
    // ========================================
-    if (titleFont >= 0)                            
+    if (titleFont >= 0)
     {
         // たまにグリッチを発生させる
         bool glitch = (animationTimer % 180 < 5);
@@ -505,7 +505,7 @@ void TitleScene::Draw()
     // ========================================
     // FPS表示
     // ========================================
-    static int fpsTimer = GetNowCount();
+    /* static int fpsTimer = GetNowCount();
     static int frameCount = 0;
     static int fps = 0;
 
@@ -526,7 +526,7 @@ void TitleScene::Draw()
         10, 10,
         GetColor(0, 255, 0),
         "FPS : %d", fps
-    );
+    );*/
 }
 
 

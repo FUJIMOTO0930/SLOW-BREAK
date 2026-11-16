@@ -496,6 +496,80 @@ void DrawWallX(float z1, float z2, float y1, float y2, float x, float normalX)
     }
 }
 
+// 天井を細かい平面で描画する
+void DrawCeiling(float x1, float x2, float z1, float z2, float y)
+{
+    const float size = 0.5f;
+
+    for (float x = x1; x < x2; x += size)
+    {
+        for (float z = z1; z < z2; z += size)
+        {
+            float nx = (x + size < x2) ? x + size : x2;
+            float nz = (z + size < z2) ? z + size : z2;
+
+            VERTEX3D vertex[6] = {};
+
+            VECTOR positions[6] = {
+                VGet(x,  y, nz),
+                VGet(x,  y, z),
+                VGet(nx, y, z),
+
+                VGet(nx, y, z),
+                VGet(nx, y, nz),
+                VGet(x,  y, nz)
+            };
+
+            for (int i = 0; i < 6; i++)
+            {
+                vertex[i].pos = positions[i];
+                vertex[i].norm = VGet(0.0f, -1.0f, 0.0f);
+                vertex[i].dif = GetColorU8(90, 100, 115, 255);
+                vertex[i].spc = GetColorU8(0, 0, 0, 255);
+            }
+
+            DrawPolygon3D(vertex, 2, DX_NONE_GRAPH, TRUE);
+        }
+    }
+}
+
+// 床を細かい平面で描画する
+void DrawFloor(float x1, float x2, float z1, float z2, float y)
+{
+    const float size = 0.5f;
+
+    for (float x = x1; x < x2; x += size)
+    {
+        for (float z = z1; z < z2; z += size)
+        {
+            float nx = (x + size < x2) ? x + size : x2;
+            float nz = (z + size < z2) ? z + size : z2;
+
+            VERTEX3D vertex[6] = {};
+
+            VECTOR positions[6] = {
+                VGet(x, y, z),
+                VGet(x, y, nz),
+                VGet(nx, y, z),
+
+                VGet(nx, y, z),
+                VGet(x, y, nz),
+                VGet(nx, y, nz)
+            };
+
+            for (int i = 0; i < 6; i++)
+            {
+                vertex[i].pos = positions[i];
+                vertex[i].norm = VGet(0.0f, 1.0f, 0.0f);
+                vertex[i].dif = GetColorU8(80, 95, 110, 255);
+                vertex[i].spc = GetColorU8(0, 0, 0, 255);
+            }
+
+            DrawPolygon3D(vertex, 2, DX_NONE_GRAPH, TRUE);
+        }
+    }
+}
+
 // ========================================
 // メイン
 // ========================================
@@ -570,6 +644,11 @@ SetLightDifColorHandle(
     gameState = GAME_STATE_TITLE;
 
     int oldMouseInput = 0;
+    // FPS計測
+    int fpsFrameCount = 0;
+    int fpsLastTime = GetNowCount();
+    float fps = 0.0f;
+    float frameTime = 0.0f;
 
     SetDrawMode(DX_DRAWMODE_BILINEAR);
 
@@ -579,6 +658,21 @@ SetLightDifColorHandle(
     while (ProcessMessage() == 0)
     {
         ClearDrawScreen();
+
+        // FPS計測
+        fpsFrameCount++;
+
+        int fpsNow = GetNowCount();
+        int fpsElapsed = fpsNow - fpsLastTime;
+
+        if (fpsElapsed >= 1000)
+        {
+            fps = fpsFrameCount * 1000.0f / fpsElapsed;
+            frameTime = fps > 0.0f ? 1000.0f / fps : 0.0f;
+
+            fpsFrameCount = 0;
+            fpsLastTime = fpsNow;
+        }
 
         // ========================================
         // 【開発用】ESCキーでゲームを完全終了
@@ -630,6 +724,19 @@ SetLightDifColorHandle(
             {
                 break;
             }
+
+            // タイトル画面のFPS表示（右上）
+            DrawFormatString(
+                1080, 20,
+                GetColor(100, 255, 100),
+                "FPS : %.1f", fps
+            );
+
+            DrawFormatString(
+                1080, 45,
+                GetColor(255, 255, 255),
+                "Frame Time : %.1f ms", frameTime
+            );
 
             ScreenFlip();
             continue;
@@ -1429,140 +1536,93 @@ SetLightDifColorHandle(
         // ====================================
 
         // 左研究室の床
-        DrawCube3D(
-            VGet(-50.0f, -0.5f, -10.0f),
-            VGet(-30.0f, 0.0f, 10.0f),
-            GetColor(80, 95, 110),
-            GetColor(60, 75, 90),
-            TRUE
-        );
+        DrawFloor(-50.0f, -30.0f, -10.0f, 10.0f, 0.0f);
 
         // 右研究室の床
-        DrawCube3D(
-            VGet(30.0f, -0.5f, -10.0f),
-            VGet(50.0f, 0.0f, 10.0f),
-            GetColor(80, 95, 110),
-            GetColor(60, 75, 90),
-            TRUE
-        );
+        DrawFloor(30.0f, 50.0f, -10.0f, 10.0f, 0.0f);
 
-        // 左研究室：奥と手前の壁
-        DrawCube3D(
-            VGet(-50, 0, -10.5f),
-            VGet(-30.5f, 8, -10),
-            GetColor(115, 135, 150),
-            GetColor(65, 85, 100), TRUE
-        );
+        // 左研究室：手前の壁
+        DrawWallZ(-50.0f, -30.5f, 0.0f, 8.0f, -10.0f, 1.0f);
 
-        DrawCube3D(
-            VGet(-50, 0, 10),
-            VGet(-30.5f, 8, 10.5f),
-            GetColor(115, 135, 150),
-            GetColor(65, 85, 100), TRUE
-        );
+        // 左研究室：奥の壁
+        DrawWallZ(-50.0f, -30.5f, 0.0f, 8.0f, 10.0f, -1.0f);
 
         // 左研究室：外側の壁
-        DrawCube3D(
-            VGet(-50.5f, 0, -10),
-            VGet(-50, 8, 10),
-            GetColor(115, 135, 150),
-            GetColor(65, 85, 100), TRUE
-        );
+        DrawWallX(-10.0f, 10.0f, 0.0f, 8.0f, -50.0f, 1.0f);
 
-        // 右研究室：奥と手前の壁
-        DrawCube3D(
-            VGet(30.5f, 0, -10.5f),
-            VGet(50, 8, -10),
-            GetColor(115, 135, 150),
-            GetColor(65, 85, 100), TRUE
-        );
+        // 右研究室：手前の壁
+        DrawWallZ(30.5f, 50.0f, 0.0f, 8.0f, -10.0f, 1.0f);
 
-        DrawCube3D(
-            VGet(30.5f, 0, 10),
-            VGet(50, 8, 10.5f),
-            GetColor(115, 135, 150),
-            GetColor(65, 85, 100), TRUE
-        );
+        // 右研究室：奥の壁
+        DrawWallZ(30.5f, 50.0f, 0.0f, 8.0f, 10.0f, -1.0f);
 
         // 右研究室：外側の壁
-        DrawCube3D(
-            VGet(50, 0, -10),
-            VGet(50.5f, 8, 10),
-            GetColor(115, 135, 150),
-            GetColor(65, 85, 100), TRUE
-        );
+        DrawWallX(-10.0f, 10.0f, 0.0f, 8.0f, 50.0f, -1.0f);
 
         // ====================================
         // 近未来研究施設：奥の制御室
         // ====================================
 
         // 床
-        DrawCube3D(
-            VGet(-12.5f, -0.5f, 30.0f),
-            VGet(12.5f, 0.0f, 45.0f),
-            GetColor(80, 95, 110),
-            GetColor(60, 75, 90), TRUE
-        );
+        DrawFloor(-12.5f, 12.5f, 30.0f, 45.0f, 0.0f);
 
         // 左壁
-        DrawCube3D(
-            VGet(-13.0f, 0.0f, 30.5f),
-            VGet(-12.5f, 8.0f, 45.0f),
-            GetColor(115, 135, 150),
-            GetColor(65, 85, 100), TRUE
-        );
+        DrawWallX(30.5f, 45.0f, 0.0f, 8.0f, -12.5f, 1.0f);
 
         // 右壁
-        DrawCube3D(
-            VGet(12.5f, 0.0f, 30.5f),
-            VGet(13.0f, 8.0f, 45.0f),
-            GetColor(115, 135, 150),
-            GetColor(65, 85, 100), TRUE
-        );
+        DrawWallX(30.5f, 45.0f, 0.0f, 8.0f, 12.5f, -1.0f);
 
         // 奥壁
-        DrawCube3D(
-            VGet(-13.0f, 0.0f, 45.0f),
-            VGet(13.0f, 8.0f, 45.5f),
-            GetColor(115, 135, 150),
-            GetColor(65, 85, 100), TRUE
-        );
+        DrawWallZ(-13.0f, 13.0f, 0.0f, 8.0f, 45.0f, -1.0f);
 
         // ========================================
         // 近未来研究施設：天井
         // ========================================
 
-        // 中央ホール
-        DrawCube3D(
-            VGet(-30, 12.0f, -30),
-            VGet(30, 12.3f, 30),
-            GetColor(85, 100, 115),
-            GetColor(55, 70, 85), TRUE
+        // 中央ホール：天井
+        DrawCeiling(
+            -30.0f, 30.0f,
+            -30.0f, 30.0f,
+            12.0f
         );
 
-        // 左研究室
-        DrawCube3D(
-            VGet(-50, 8.0f, -10),
-            VGet(-30.5f, 8.3f, 10),
-            GetColor(85, 100, 115),
-            GetColor(55, 70, 85), TRUE
+
+        // 左研究室：天井
+        DrawCeiling(
+            -50.0f, -30.5f,
+            -10.0f, 10.0f,
+            8.0f
         );
 
-        // 右研究室
-        DrawCube3D(
-            VGet(30.5f, 8.0f, -10),
-            VGet(50, 8.3f, 10),
-            GetColor(85, 100, 115),
-            GetColor(55, 70, 85), TRUE
+        // 右研究室：天井
+        DrawCeiling(
+            30.5f, 50.0f,
+            -10.0f, 10.0f,
+            8.0f
         );
 
-        // 奥の制御室
-        DrawCube3D(
-            VGet(-12.5f, 8.0f, 30.5f),
-            VGet(12.5f, 8.3f, 45),
-            GetColor(85, 100, 115),
-            GetColor(55, 70, 85), TRUE
+        // 奥の制御室：天井
+        DrawCeiling(
+            -12.5f, 12.5f,
+            30.5f, 45.0f,
+            8.0f
         );
+
+        // プレイ画面のFPS表示（右上）
+        if (gameState == GAME_STATE_PLAY)
+        {
+            DrawFormatString(
+                1080, 20,
+                GetColor(100, 255, 100),
+                "FPS : %.1f", fps
+            );
+
+            DrawFormatString(
+                1080, 45,
+                GetColor(255, 255, 255),
+                "Frame Time : %.1f ms", frameTime
+            );
+        }
 
         // ====================================
         // 敵描画
