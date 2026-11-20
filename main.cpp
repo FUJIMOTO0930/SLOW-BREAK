@@ -31,6 +31,12 @@ GameState gameState = GAME_STATE_PLAY;
 TitleScene titleScene;
 
 // ========================================
+// クリア演出
+// ========================================
+int clearEffectTimer = 0;
+const int CLEAR_FADE_TIME = 90; // 暗転にかけるフレーム数
+
+// ========================================
 // SLOW能力
 // ========================================
 bool isSlow = false;
@@ -97,73 +103,24 @@ bool IsHitWall(VECTOR pos)
     const float playerRadius = 0.4f;
 
     // ====================================
-    // マップ外周・各部屋の壁
+    // 【中央ホール】外周の当たり判定
     // ====================================
 
- // ====================================
-// 【制御室】入口・外周の当たり判定
-// ====================================
-
-// 制御室の入口（X=-4～4）
-    bool atControlEntrance =
-        pos.x - playerRadius >= -4.0f &&
-        pos.x + playerRadius <= 4.0f;
-
-    // 制御室の範囲
-    bool inControlRoom =
-        pos.x >= -12.5f && pos.x <= 12.5f &&
-        pos.z >= 30.0f && pos.z <= 45.0f;
-
-    // 奥の壁：入口以外は通れない
-    if (pos.z + playerRadius > 30.0f &&
-        pos.z - playerRadius < 30.5f &&
-        !atControlEntrance)
-    {
+    // 奥の壁
+    if (pos.z + playerRadius > 30.0f)
         return true;
-    }
 
-    // 制御室の奥側の限界
-    if (pos.z + playerRadius > 45.0f)
-    {
-        return true;
-    }
-
-    // 手前の外周
+    // 手前の壁
     if (pos.z - playerRadius < -30.0f)
         return true;
 
-    // 左右の外周
-    if (pos.x - playerRadius < -50.0f) return true;
-    if (pos.x + playerRadius > 50.0f) return true;
+    // 左の壁
+    if (pos.x - playerRadius < -30.0f)
+        return true;
 
-    // 左右研究室の入口以外の壁
-    if ((pos.x - playerRadius < -30.0f &&
-        pos.x + playerRadius > -30.5f) ||
-        (pos.x + playerRadius > 30.0f &&
-            pos.x - playerRadius < 30.5f))
-    {
-        if (pos.z - playerRadius < -4.0f ||
-            pos.z + playerRadius > 4.0f)
-            return true;
-    }
-
-    // 左右研究室の前後の壁
-    if (pos.x - playerRadius < -30.0f ||
-        pos.x + playerRadius > 30.0f)
-    {
-        if (pos.z - playerRadius < -10.0f ||
-            pos.z + playerRadius > 10.0f)
-            return true;
-    }
-
-    // 制御室の左右・奥の壁
-    if (inControlRoom)
-    {
-        if (pos.x - playerRadius < -12.5f ||
-            pos.x + playerRadius > 12.5f ||
-            pos.z + playerRadius > 45.0f)
-            return true;
-    }
+    // 右の壁
+    if (pos.x + playerRadius > 30.0f)
+        return true;
 
     // 柱4本の当たり判定
     const float pillarX[] = { -16.0f, 16.0f };
@@ -209,49 +166,17 @@ bool IsHitWall(VECTOR pos)
 // ========================================
 bool IsBulletHitWall(VECTOR pos)
 {
-    // ========================================
-    // 外側の限界・奥の制御室
-    // ========================================
+ // ========================================
+ // 【中央ホール】弾と外周の当たり判定
+ // ========================================
 
-    // 手前の外周
-    if (pos.z < -30.0f) return true;
-
-    // 左右の外周
-    if (pos.x < -50.0f || pos.x > 50.0f) return true;
-
-    // 中央ホールと制御室の境界
-    // 入口（X=-4～4）以外は壁
-    if (pos.z >= 30.0f && pos.z <= 30.5f)
-    {
-        if (pos.x < -4.0f || pos.x > 4.0f)
-            return true;
-    }
-
-    // 制御室の左右の壁
-    if (pos.z > 30.5f)
-    {
-        if (pos.x < -12.5f || pos.x > 12.5f)
-            return true;
-    }
-
-    // 制御室の奥の壁
-    if (pos.z > 45.0f)
+ // 手前・奥の壁
+    if (pos.z <= -30.0f || pos.z >= 30.0f)
         return true;
 
-    // 左右の入口以外の壁
-    if ((pos.x >= -30.5f && pos.x <= -30.0f) ||
-        (pos.x >= 30.0f && pos.x <= 30.5f))
-    {
-        if (pos.z < -4.0f || pos.z > 4.0f)
-            return true;
-    }
-
-    // 研究室の前後の壁
-    if (pos.x < -30.0f || pos.x > 30.0f)
-    {
-        if (pos.z < -10.0f || pos.z > 10.0f)
-            return true;
-    }
+    // 左右の壁
+    if (pos.x <= -30.0f || pos.x >= 30.0f)
+        return true;
 
     // 柱4本の当たり判定
     const float pillarX[] = { -16.0f, 16.0f };
@@ -367,6 +292,9 @@ void CreateImpactEffect(VECTOR position)
 // ========================================
 void ResetGame()
 {
+    // クリア演出をリセット
+    clearEffectTimer = 0;
+
     // プレイヤー
     playerPos = VGet(0.0f, 1.7f, 0.0f);
     playerHP = 100;
@@ -533,42 +461,6 @@ void DrawCeiling(float x1, float x2, float z1, float z2, float y)
     }
 }
 
-// 床を細かい平面で描画する
-void DrawFloor(float x1, float x2, float z1, float z2, float y)
-{
-    const float size = 0.5f;
-
-    for (float x = x1; x < x2; x += size)
-    {
-        for (float z = z1; z < z2; z += size)
-        {
-            float nx = (x + size < x2) ? x + size : x2;
-            float nz = (z + size < z2) ? z + size : z2;
-
-            VERTEX3D vertex[6] = {};
-
-            VECTOR positions[6] = {
-                VGet(x, y, z),
-                VGet(x, y, nz),
-                VGet(nx, y, z),
-
-                VGet(nx, y, z),
-                VGet(x, y, nz),
-                VGet(nx, y, nz)
-            };
-
-            for (int i = 0; i < 6; i++)
-            {
-                vertex[i].pos = positions[i];
-                vertex[i].norm = VGet(0.0f, 1.0f, 0.0f);
-                vertex[i].dif = GetColorU8(80, 95, 110, 255);
-                vertex[i].spc = GetColorU8(0, 0, 0, 255);
-            }
-
-            DrawPolygon3D(vertex, 2, DX_NONE_GRAPH, TRUE);
-        }
-    }
-}
 
 // ========================================
 // メイン
@@ -596,9 +488,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 int flashlight = CreateSpotLightHandle(
     VGet(0.0f, 1.7f, 0.0f),    // ライトの位置
     VGet(0.0f, 0.0f, 1.0f),    // 照らす方向
-    DX_PI_F / 5.0f,           // 光の広がり
-    DX_PI_F / 8.0f,           // 中心の明るい範囲
-    25.0f,                    // 光が届く距離
+    DX_PI_F / 4.0f,           // 光の広がり
+    DX_PI_F / 2.0f,           // 中心の明るい範囲
+    18.0f,                    // 光が届く距離
     0.0f,
     0.02f,
     0.0f
@@ -615,12 +507,13 @@ SetLightDifColorHandle(
     // ====================================
 
     // 標準ライトを有効化
-    SetLightEnable(TRUE);
+    SetLightEnable(false);
 
-    // 全体を薄暗く照らす
-    SetGlobalAmbientLight(GetColorF(0.15f, 0.18f, 0.22f, 1.0f));
-    // 標準ライトの明るさを弱める
-    SetLightDifColor(GetColorF(0.15f, 0.15f, 0.18f, 1.0f));
+    // 環境光を暗くする
+    SetGlobalAmbientLight(GetColorF(0.03f, 0.04f, 0.06f, 1.0f));
+
+    // 標準ライトを弱くする
+    SetLightDifColor(GetColorF(0.03f, 0.03f, 0.04f, 1.0f));
 
     // ====================================
     // フォント
@@ -793,6 +686,31 @@ SetLightDifColorHandle(
         if (damageEffectTimer > 0)
         {
             damageEffectTimer--;
+        }
+
+        // ========================================
+        // クリア演出タイマー
+        // ========================================
+        if (gameState == GAME_STATE_CLEAR &&
+            clearEffectTimer < CLEAR_FADE_TIME)
+        {
+            clearEffectTimer++;
+        }
+
+        // クリア後にRキーでリスタート
+        if (gameState == GAME_STATE_CLEAR &&
+            CheckHitKey(KEY_INPUT_R))
+        {
+            ResetGame();
+            oldMouseInput = 0;
+            SetMousePoint(centerX, centerY);
+        }
+
+        // クリア画面でESCキーを押したらゲーム終了
+        if (gameState == GAME_STATE_CLEAR &&
+            CheckHitKey(KEY_INPUT_ESCAPE))
+        {
+            break;
         }
 
         // ====================================
@@ -1387,41 +1305,21 @@ SetLightDifColorHandle(
         }
 
         // ====================================
-        // 奥の壁：制御室への入口
+        // 中央ホール：外周の壁（入口なし）
         // ====================================
 
-       // 奥の壁：左側
-        DrawWallZ(-30.0f, -4.0f, 0.0f, 12.0f, 30.0f, -1.0f);
-
-        // 奥の壁：右側
-        DrawWallZ(4.0f, 30.0f, 0.0f, 12.0f, 30.0f, -1.0f);
-
-        // 入口の上部
-        DrawWallZ(-4.0f, 4.0f, 4.0f, 12.0f, 30.0f, -1.0f);
+        // 奥の壁
+        DrawWallZ(-30.0f, 30.0f, 0.0f, 12.0f, 30.0f, -1.0f);
 
         // 手前の壁
-        DrawWallZ(
-            -30.0f, 30.0f,
-            0.0f, 12.0f,
-            -30.0f,
-            1.0f
-        );
+        DrawWallZ(-30.0f, 30.0f, 0.0f, 12.0f, -30.0f, 1.0f);
 
-        // ====================================
-        // 左右の壁：研究室への入口付き
-        // ====================================
+        // 左の壁
+        DrawWallX(-30.0f, 30.0f, 0.0f, 12.0f, -30.0f, 1.0f);
 
-        // 左壁：手前側
-        DrawWallX(-30.0f, -4.0f, 0.0f, 12.0f, -30.0f, 1.0f);
+        // 右の壁
+        DrawWallX(-30.0f, 30.0f, 0.0f, 12.0f, 30.0f, -1.0f);
 
-        // 左壁：奥側
-        DrawWallX(4.0f, 30.0f, 0.0f, 12.0f, -30.0f, 1.0f);
-
-        // 右壁：手前側
-        DrawWallX(-30.0f, -4.0f, 0.0f, 12.0f, 30.0f, -1.0f);
-
-        // 右壁：奥側
-        DrawWallX(4.0f, 30.0f, 0.0f, 12.0f, 30.0f, -1.0f);
         // ====================================
         // 近未来研究施設：柱4本
         // ====================================
@@ -1531,51 +1429,7 @@ SetLightDifColorHandle(
             }
         }
 
-        // ====================================
-        // 近未来研究施設：左右の研究室
-        // ====================================
-
-        // 左研究室の床
-        DrawFloor(-50.0f, -30.0f, -10.0f, 10.0f, 0.0f);
-
-        // 右研究室の床
-        DrawFloor(30.0f, 50.0f, -10.0f, 10.0f, 0.0f);
-
-        // 左研究室：手前の壁
-        DrawWallZ(-50.0f, -30.5f, 0.0f, 8.0f, -10.0f, 1.0f);
-
-        // 左研究室：奥の壁
-        DrawWallZ(-50.0f, -30.5f, 0.0f, 8.0f, 10.0f, -1.0f);
-
-        // 左研究室：外側の壁
-        DrawWallX(-10.0f, 10.0f, 0.0f, 8.0f, -50.0f, 1.0f);
-
-        // 右研究室：手前の壁
-        DrawWallZ(30.5f, 50.0f, 0.0f, 8.0f, -10.0f, 1.0f);
-
-        // 右研究室：奥の壁
-        DrawWallZ(30.5f, 50.0f, 0.0f, 8.0f, 10.0f, -1.0f);
-
-        // 右研究室：外側の壁
-        DrawWallX(-10.0f, 10.0f, 0.0f, 8.0f, 50.0f, -1.0f);
-
-        // ====================================
-        // 近未来研究施設：奥の制御室
-        // ====================================
-
-        // 床
-        DrawFloor(-12.5f, 12.5f, 30.0f, 45.0f, 0.0f);
-
-        // 左壁
-        DrawWallX(30.5f, 45.0f, 0.0f, 8.0f, -12.5f, 1.0f);
-
-        // 右壁
-        DrawWallX(30.5f, 45.0f, 0.0f, 8.0f, 12.5f, -1.0f);
-
-        // 奥壁
-        DrawWallZ(-13.0f, 13.0f, 0.0f, 8.0f, 45.0f, -1.0f);
-
-        // ========================================
+         // ========================================
         // 近未来研究施設：天井
         // ========================================
 
@@ -1586,27 +1440,6 @@ SetLightDifColorHandle(
             12.0f
         );
 
-
-        // 左研究室：天井
-        DrawCeiling(
-            -50.0f, -30.5f,
-            -10.0f, 10.0f,
-            8.0f
-        );
-
-        // 右研究室：天井
-        DrawCeiling(
-            30.5f, 50.0f,
-            -10.0f, 10.0f,
-            8.0f
-        );
-
-        // 奥の制御室：天井
-        DrawCeiling(
-            -12.5f, 12.5f,
-            30.5f, 45.0f,
-            8.0f
-        );
 
         // プレイ画面のFPS表示（右上）
         if (gameState == GAME_STATE_PLAY)
@@ -2014,18 +1847,81 @@ SetLightDifColorHandle(
         }
 
         // ====================================
-        // STAGE CLEAR
+        // AREA CLEARED 演出
         // ====================================
         if (gameState == GAME_STATE_CLEAR)
         {
-            DrawStringToHandle(
-                centerX - 250,
-                centerY - 50,
-                "STAGE CLEAR",
-                GetColor(255, 230, 50),
-                clearFont
+            // 暗転の進行度（0.0 ～ 1.0）
+            float fadeRate =
+                (float)clearEffectTimer / CLEAR_FADE_TIME;
+
+            if (fadeRate > 1.0f)
+                fadeRate = 1.0f;
+
+            // 中央ホールがうっすら見える程度まで暗転
+            int fadeAlpha = (int)(220 * fadeRate);
+
+            SetDrawBlendMode(DX_BLENDMODE_ALPHA, fadeAlpha);
+
+            DrawBox(
+                0, 0,
+                1280, 720,
+                GetColor(0, 5, 12),
+                TRUE
             );
-        }
+
+            SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+
+            // 暗転が進んでから文字を表示
+          // 暗転が進んでから文字を表示
+            if (clearEffectTimer >= 45)
+            {
+                // メインタイトルを中央配置
+                const char* clearText = "AREA CLEARED";
+
+                int clearWidth = GetDrawStringWidthToHandle(
+                    clearText, -1, clearFont
+                );
+
+                DrawStringToHandle(
+                    centerX - clearWidth / 2,
+                    centerY - 90,
+                    clearText,
+                    GetColor(130, 220, 255),
+                    clearFont
+                );
+
+                // サブタイトルを中央配置
+                const char* subText = "ALL HOSTILES ELIMINATED";
+
+                int subWidth = GetDrawStringWidth(subText, -1);
+
+                DrawString(
+                    centerX - subWidth / 2,
+                    centerY + 20,
+                    subText,
+                    GetColor(180, 200, 220)
+                );
+            }
+
+            // 暗転終了後にリスタート案内
+            if (clearEffectTimer >= CLEAR_FADE_TIME)
+            {
+                const char* restartText = "Press R to Restart";
+
+                int restartWidth = GetDrawStringWidthToHandle(
+                    restartText, -1, restartFont
+                );
+
+                DrawStringToHandle(
+                    centerX - restartWidth / 2,
+                    centerY + 100,
+                    restartText,
+                    GetColor(220, 220, 220),
+                    restartFont
+                );
+            }
+        }        
 
         ScreenFlip();
     }
